@@ -168,7 +168,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
         {/* Header with Brand Logo */}
         <div className="px-6 pt-6 pb-2">
           <Link href="/dashboard" className="flex items-center justify-start group">
-            <div className="relative h-24 w-auto">
+            <div className="relative h-26 w-auto">
               <img 
                 src="/logo.png" 
                 alt="Taleem ul Quran Logo" 
