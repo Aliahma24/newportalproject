@@ -165,12 +165,17 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
       />
       
       <div className="relative z-10 flex flex-col h-full">
-        {/* Header */}
-        <div className="p-6 flex items-center gap-3">
-          <div className="h-9 w-9 bg-primary/20 rounded-xl flex items-center justify-center shadow-lg border border-primary/20">
-            <Briefcase size={20} className="text-primary" />
-          </div>
-          <span className="font-bold text-lg tracking-tight text-white">Taleem ul Quran</span>
+        {/* Header with Brand Logo */}
+        <div className="p-4 pt-8 mb-4">
+          <Link href="/dashboard" className="flex items-center justify-center group">
+            <div className="relative h-16 w-auto">
+              <img 
+                src="/logo.png" 
+                alt="Taleem ul Quran Logo" 
+                className="h-full w-auto object-contain opacity-100 group-hover:opacity-90 transition-opacity" 
+              />
+            </div>
+          </Link>
         </div>
 
         {/* Menu */}

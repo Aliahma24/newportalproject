@@ -197,56 +197,61 @@ export default function AdminDashboard() {
 
           {/* Analytics Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Student Growth Chart */}
+            {/* Enrollment Insights Panel (Replaces Graph) */}
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-              <div className="flex items-start justify-between mb-8">
+              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h3 className="font-bold text-foreground">Student Growth</h3>
-                  <p className="text-xs text-muted-foreground font-medium">Registrations over last 6 months</p>
+                  <h3 className="font-bold text-foreground">Enrollment Insights</h3>
+                  <p className="text-xs text-muted-foreground font-medium">Growth metrics and distribution</p>
                 </div>
-                <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground transition-colors">
-                  <MoreHorizontal size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                   <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                      +12% Growth
+                   </span>
+                </div>
               </div>
-              <div className="flex h-48 gap-3">
-                 {/* Y-Axis */}
-                 <div className="flex flex-col justify-between text-[11px] font-bold text-muted-foreground/60 text-right w-10 pb-6">
-                    <span>1.5k</span><span>1.0k</span><span>500</span><span>0</span>
+
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                 <div className="p-4 rounded-xl bg-slate-50 border border-border text-center group hover:border-primary transition-all">
+                    <div className="text-2xl font-black text-foreground">08</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Today</div>
                  </div>
-                 <div className="flex-1 relative flex flex-col">
-                    <div className="flex-1 relative mb-6">
-                       {/* Grid lines */}
-                       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                          <div className="w-full border-t border-dashed border-border mt-[33.3%]" />
-                          <div className="w-full border-t border-dashed border-border mb-[33.3%]" />
-                       </div>
-                       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible relative z-10">
-                          <path d="M0,70 L20,60 L40,65 L60,40 L80,20 L100,10 L100,100 L0,100 Z" fill="rgba(166, 124, 50, 0.08)" />
-                          <path d="M0,70 L20,60 L40,65 L60,40 L80,20 L100,10" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                       </svg>
-                       {/* Data Points */}
-                       {[0, 20, 40, 60, 80, 100].map((x, i) => {
-                         const y = [70, 60, 65, 40, 20, 10][i];
-                         return (
-                           <div 
-                              key={i} 
-                              className={cn(
-                                "absolute h-2.5 w-2.5 bg-card border-2 border-primary rounded-full -translate-x-1/2 -translate-y-1/2 z-20",
-                                i === 5 && "bg-primary"
-                              )} 
-                              style={{ left: `${x}%`, top: `${y}%` }} 
-                            />
-                         );
-                       })}
-                       {/* Tooltip Example */}
-                       <div className="absolute left-[100%] top-[10%] -translate-x-full -translate-y-full mb-3 mr-3 bg-foreground text-background px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-xl z-30 flex flex-col gap-0.5">
-                          <span className="text-[13px]">1,248</span>
-                          <span className="opacity-70 font-medium text-[10px]">Jun 2023</span>
-                          <div className="absolute bottom-[-4px] right-3 w-2 h-2 bg-foreground rotate-45" />
-                       </div>
+                 <div className="p-4 rounded-xl bg-slate-50 border border-border text-center group hover:border-primary transition-all">
+                    <div className="text-2xl font-black text-primary">42</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1">This Week</div>
+                 </div>
+                 <div className="p-4 rounded-xl bg-slate-50 border border-border text-center group hover:border-primary transition-all">
+                    <div className="text-2xl font-black text-foreground">156</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase mt-1">This Month</div>
+                 </div>
+              </div>
+
+              <div className="space-y-5">
+                 <div>
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider mb-2">
+                       <span className="text-muted-foreground">Beginner Level</span>
+                       <span className="text-foreground">60%</span>
                     </div>
-                    <div className="flex justify-between text-[11px] font-bold text-muted-foreground/60 uppercase">
-                       <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-primary w-[60%] rounded-full" />
+                    </div>
+                 </div>
+                 <div>
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider mb-2">
+                       <span className="text-muted-foreground">Intermediate</span>
+                       <span className="text-foreground">25%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-amber-500 w-[25%] rounded-full" />
+                    </div>
+                 </div>
+                 <div>
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider mb-2">
+                       <span className="text-muted-foreground">Advanced (Hifz)</span>
+                       <span className="text-foreground">15%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-emerald-500 w-[15%] rounded-full" />
                     </div>
                  </div>
               </div>
