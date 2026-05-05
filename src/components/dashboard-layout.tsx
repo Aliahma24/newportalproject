@@ -292,8 +292,16 @@ export function Navbar({
   userAvatar?: string;
   hideSearch?: boolean;
 }) {
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const notifications = [
+    { id: 1, title: "New Demo Request", desc: "Zayd Ibrahim requested a Tajweed demo.", time: "2 mins ago", type: "info" },
+    { id: 2, title: "Leave Approved", desc: "Your leave for Oct 25 has been approved.", time: "1 hour ago", type: "success" },
+    { id: 3, title: "Class Starting Soon", desc: "Hifz Revision class starts in 10 mins.", time: "Just now", type: "warning" },
+  ];
+
   return (
-    <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6 md:px-8 shrink-0">
+    <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6 md:px-8 shrink-0 relative z-[40]">
       <div className="flex items-center gap-8 flex-1">
         <button onClick={onMenuClick} className="md:hidden p-2 hover:bg-muted rounded-lg text-muted-foreground">
           <Menu size={20} />
@@ -318,10 +326,48 @@ export function Navbar({
       </div>
 
       <div className="flex items-center gap-5">
-        <button className="relative h-10 w-10 flex items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted transition-all">
-          <Bell size={20} />
-          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-card" />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className={cn(
+              "relative h-10 w-10 flex items-center justify-center rounded-full border border-border transition-all",
+              showNotifications ? "bg-primary/10 text-primary border-primary/20" : "text-muted-foreground hover:bg-muted"
+            )}
+          >
+            <Bell size={20} />
+            <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-card" />
+          </button>
+
+          {/* Notification Dropdown */}
+          {showNotifications && (
+            <div className="absolute top-full right-0 mt-3 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+               <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+                  <h3 className="text-sm font-bold text-foreground">Notifications</h3>
+                  <button className="text-[11px] font-bold text-primary hover:underline">Mark all read</button>
+               </div>
+               <div className="max-h-[320px] overflow-y-auto">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="p-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer group">
+                       <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1">
+                             <div className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">{n.title}</div>
+                             <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed">{n.desc}</p>
+                             <div className="text-[10px] font-bold text-muted-foreground/50 mt-2 uppercase tracking-tight">{n.time}</div>
+                          </div>
+                          <div className={cn(
+                            "w-2 h-2 rounded-full mt-1.5",
+                            n.type === "warning" ? "bg-amber-500" : n.type === "success" ? "bg-emerald-500" : "bg-primary"
+                          )} />
+                       </div>
+                    </div>
+                  ))}
+               </div>
+               <button className="w-full p-3 text-[12px] font-bold text-muted-foreground hover:text-foreground bg-muted/10 transition-colors">
+                  View all activity
+               </button>
+            </div>
+          )}
+        </div>
 
         <div className="h-10 w-[1px] bg-border mx-2 hidden sm:block" />
 
