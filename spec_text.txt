@@ -1,0 +1,528 @@
+--- PAGE 1 ---
+Taleem ul Quran Portal - Complete System Specification
+Project Overview
+Platform:  Web-based application (responsive design)
+Purpose:  Online Quran teaching management system
+User  Roles:  Admin/Owner , HOD, Teachers, Students, Schedulers, HR, Customer Service Rep, Monitoring
+Team
+1. CUST OMER SER VICE REPRESENT ATIVE (CSR) MODULE
+Purpose
+First point of contact for new customers. Handles demo class requests.
+Key Scr eens Needed
+1.1 Demo Request Form
+Fields to collect:
+Guardian Name (text input)
+Student Name (text input)
+Student Age (number input)
+Student Level (dropdown: Beginner , Intermediate, Advanced)
+WhatsApp Number (phone input with country code)
+Preferred Time Slot (time picker)
+Preferred Days (checkbox: Mon-Thu OR Sat-Sun)
+Actions:
+Submit button → sends info to Scheduler
+View Pending Demos button → see list of demos waiting to be scheduled
+1.2 Demo Dashboard
+Display:
+List of all demos (Pending, Scheduled, Completed, Cancelled)
+Status badges with color coding
+Notification bar at top showing "X demos need scheduling"
+Filter by date/status
+
+--- PAGE 2 ---
+UI Notes:
+Clean table view with search functionality
+Each row shows: Student Name, Guardian, Date Submitted, Status
+Click row to see full details
+2. SCHEDULER MODULE
+Purpose
+Receives demo requests and assigns teachers + time slots. Manages all class scheduling.
+Key Scr eens Needed
+2.1 Today's Schedule View
+Display:
+Time-based grid/calendar showing all classes for today (08:00 - 20:00)
+Each class block shows:
+Teacher Name
+Student Name
+Class Time (08:00 - 08:30 PM format)
+Status indicator (Ongoing, Completed, Cancelled)
+Stats at top:
+Total classes today: [number]
+Total makeup classes today: [number]
+Ongoing classes: [number]
+2.2 Demo Assignment Scr een
+Shows:
+List of unscheduled demo requests (from CSR)
+Available teachers dropdown
+Date picker
+Time slot selector
+Assign button
+
+--- PAGE 3 ---
+After  assignment:
+Auto-notification sent to student & teacher
+2.3 Weekly Schedule Grid
+Display:
+Full week view (Mon-Sun)
+Separate tabs for "W eekday Package" and "W eekend Package"
+Drag-and-drop functionality to reschedule classes
+Color coding for dif ferent teachers
+2.4 Makeup Class Manager
+Shows:
+List of students requesting makeup classes
+Available slots
+Assign makeup class button
+History of makeup classes
+UI Notes:
+Notification bell icon showing pending makeup requests
+3. STUDENT  POR TAL
+Purpose
+Students view their schedule, progress, syllabus, and can submit complaints.
+Key Scr eens Needed
+3.1 Student Dashboard (Home Scr een)
+Display:
+Welcome message with student name
+Today's class card (if scheduled):
+Teacher name
+Time
+Subject/T opic
+
+--- PAGE 4 ---
+"Mark Present" button (appears only at class time)
+Quick stats:
+Total lessons completed
+Current level/progress
+Next class
+3.2 My Schedule
+Display:
+Calendar view of all scheduled classes
+Filter by week/month
+Shows: Regular classes + Makeup classes (dif ferent color)
+Class details on hover/click
+3.3 Pr ogress Report
+Display:
+Total lessons taken since joining
+Current syllabus progress (percentage bar)
+Last test date and score
+Monthly breakdown of lessons
+Graph showing progress over time
+3.4 Syllabus View
+Display:
+List of topics/lessons
+Checkmark for completed topics
+Current topic highlighted
+Upcoming topics grayed out
+3.5 Attendance History
+Display:
+Table showing:
+Date
+Class time
+
+--- PAGE 5 ---
+Attendance status (Present/Absent/Late)
+Teacher name
+3.6 Request Makeup Class
+Form:
+Select date from available slots
+Select time
+Reason (optional text)
+Submit button
+3.7 Submit Complaint
+Form:
+Issue type dropdown (T eacher camera of f, Not correcting mistakes, Misbehavior , Technical issues, Other)
+Description text area
+Submit button
+UI Notes:
+Complaint goes to Monitoring Team + HOD
+4. TEACHER POR TAL
+Purpose
+Teachers manage their classes, mark attendance, view student progress, and handle syllabus.
+Key Scr eens Needed
+4.1 Teacher  Dashboard
+Display:
+Today's schedule (list of classes with times)
+Number of classes today
+Quick actions:
+Mark Attendance
+View Student List
+Add Progress Note
+
+--- PAGE 6 ---
+4.2 My Students List
+Display:
+Table showing all assigned students:
+Student Name
+Guardian Name & Contact
+Class Days & Time
+Current Level
+Last Test Date
+Progress Status
+Search and filter options
+Click student row to see detailed view
+4.3 Student Detail View
+Display:
+Full student profile
+Complete progress history
+Attendance record
+Test scores
+Notes section
+4.4 Mark Attendance Scr een
+Display:
+List of today's classes
+Each class has:
+Student name
+Scheduled time
+"Mark Present" button (only appears at class time or 5 min before)
+Rules:
+If teacher marks present AFTER 5 minutes of class start = Late/Penalty
+If doesn't mark at all = Absent
+UI Notes:
+
+--- PAGE 7 ---
+Timer showing countdown to class start
+Red warning if running late
+Auto-mark as absent if not clicked
+4.5 Syllabus Management
+Display:
+List of all syllabus topics
+Add New Topic button
+Remove/Edit options for each topic
+Assign topic to specific students
+4.6 Pr ogress Tracking
+Form:
+Select student dropdown
+Select lesson/topic dropdown
+Mark as completed checkbox
+Add notes text area
+Save button
+4.7 My Schedule
+Display:
+Weekly calendar view
+All classes color -coded
+Makeup classes shown separately
+5. HOD (HEAD OF  DEP ARTMENT) POR TAL
+Purpose
+Oversees entire operation - teachers, students, complaints, scheduling.
+Key Scr eens Needed
+5.1 HOD Dashboard
+Display:
+
+--- PAGE 8 ---
+Total students count
+Total teachers count
+Pending complaints badge
+Recent activity feed
+Quick links to all sections
+5.2 All Students Overview
+Display:
+Complete list of all students
+Progress indicators
+Last test dates
+Filter by level/status
+Export to Excel button
+5.3 All Teachers Overview
+Display:
+List of all teachers:
+Name
+Contact
+Shift/T iming
+Education/Level
+Number of students
+Attendance percentage
+Performance rating
+Add New Teacher button
+Remove Teacher option
+5.4 Teacher  Performance Dashboard
+Display:
+Graph showing teacher attendance over time
+Number of absentees
+Student feedback ratings
+Complaints received
+
+--- PAGE 9 ---
+5.5 Complaints Manager
+Display:
+List of all complaints (from students & monitoring team):
+Complaint type
+From: Student/Monitor
+Against: Teacher name
+Date
+Status (Pending, Resolved, Escalated)
+Click to see full details and add resolution notes
+5.6 Syllabus Master  Contr ol
+Display:
+Full syllabus library
+Add/Edit/Remove topics
+Assign syllabus to classes
+5.7 Scheduling Access
+Display:
+Same view as Scheduler module
+Can override and make changes
+See pending student complaints related to scheduling
+6. HR MODULE
+Purpose
+Handles teacher attendance, leave management, salary generation.
+Key Scr eens Needed
+6.1 HR Dashboard
+Display:
+Total teachers count
+Present today count
+
+--- PAGE 10 ---
+Absent today count
+Leave requests pending
+Salary slips pending
+6.2 Daily Attendance Report
+Display:
+Table showing today's attendance:
+Teacher Name
+Status (Present/Absent/Late/Leave)
+Time marked
+Number of classes conducted
+Export to PDF/Excel button
+6.3 Monthly Attendance Report
+Display:
+Calendar view for selected month
+Each teacher's attendance marked
+Summary stats:
+Total working days
+Total present days
+Total absences
+Total leaves
+Generate Report button
+6.4 Leave Management
+Display:
+List of leave requests:
+Teacher Name
+Leave Type (W ith Permission, Without Permission, Medical/Injury)
+Date Range
+Status (Approved/Rejected/Pending)
+Approve/Reject buttons
+6.5 Complaints Record
+
+--- PAGE 11 ---
+Display:
+All complaints related to teachers
+Organized by teacher
+Used for salary/performance evaluation
+6.6 Salary Slip Generator
+Process:
+Select teacher dropdown
+Select month
+Auto-calculates:
+Total classes conducted
+Total attendance days
+Deductions (absences, late marks)
+Final amount
+Generate & Send Salary Slip button
+UI Notes:
+Preview before sending
+Email to teacher automatically
+Save to records
+7. MONIT ORING TEAM MODULE
+Purpose
+Quality control - watches classes and reports issues.
+Key Scr eens Needed
+7.1 Active Classes Monitor
+Display:
+List of ongoing classes
+Join/W atch Class button for each
+Quick report button
+
+--- PAGE 12 ---
+7.2 Submit Quality Report/Complaint
+Form:
+Class details (auto-filled)
+Issue Type dropdown:
+Teacher camera of f
+Teacher not correcting mistakes
+Student misbehaving
+Teacher misbehaving
+Student not properly set up
+Other
+Severity (Low , Medium, High)
+Description text area
+Evidence/Screenshot upload
+Submit button
+Action:
+Report sent to HOD + Scheduler immediately
+Notification triggered
+7.3 Past Reports
+Display:
+History of all reports submitted
+Status tracking (Pending, Under Review , Resolved)
+Filter by date/teacher/issue type
+8. ADMIN/OWNER MODULE
+Purpose
+Full system access. Manages all users and has overview of everything.
+Key Scr eens Needed
+8.1 Admin Dashboard
+Display:
+
+--- PAGE 13 ---
+Total system stats:
+Total Students
+Total Teachers
+Total Demo Requests
+Total Revenue
+Active Classes Now
+System health indicators
+Quick links to all modules
+8.2 User  Management
+Display:
+List of all users by role
+Add New User button
+Remove/Edit users
+Assign roles/permissions
+8.3 System Settings
+Configure class timings
+Set attendance rules
+Configure penalty rules
+Email/notification settings
+Package settings (W eekday/W eekend)
+8.4 Reports & Analytics
+Revenue reports
+Student enrollment trends
+Teacher performance
+Attendance analytics
+Export all data
+
+--- PAGE 14 ---
+ATTENDANCE SYSTEM - DET AILED FLOW
+How It Works
+Teacher  Side:
+1. Teacher logs in
+2. Goes to "Mark Attendance" section
+3. Sees today's classes with scheduled times
+4. "Mark Present" button becomes active at class start time (e.g., 08:00 PM)
+5. Teacher clicks "Mark Present" when class starts
+6. System records timestamp
+Timing Rules:
+On Time:  Marked present between scheduled time and +5 minutes
+Late:  Marked present after 5 minutes but before end of class = Late/Penalty recorded
+Absent:  If teacher never clicks button = Automatically marked absent
+Student Side:
+Student also has "Mark Present" button on their side
+Both teacher AND student marking attendance provides double verification
+If only teacher marks but student doesn't = Flag for review
+If only student marks but teacher doesn't = Teacher absent
+UI Design Notes for  Attendance
+Button states:
+Disabled (gray) - before class time
+Active (green) - during class time window
+Late (orange) - after 5 minutes
+Missed (red) - after class ended
+Timer countdown showing time until class starts
+Auto-refresh to enable buttons at correct time
+GENERAL  UI/UX GUIDELINES FOR DESIGNER
+Color  Scheme Suggestions
+
+--- PAGE 15 ---
+Primary Color:  Deep blue or green (Islamic/educational feel)
+Success:  Green (present, completed)
+Warning:  Orange (late, pending)
+Danger:  Red (absent, complaints)
+Neutral:  Gray (disabled, inactive)
+Navigation Structur e
+Sidebar  Navigation  for each portal type
+Top Bar:  User profile, notifications, logout
+Breadcrumbs  for deep navigation
+Responsive Design:  Must work on tablets and mobile browsers
+Common UI Elements Needed
+1. Dashboard Cards:  Stats with icons
+2. Data Tables:  Sortable, searchable, paginated
+3. Calendar  Components:  For scheduling
+4. Time Pickers:  For class times
+5. Notification System:  Toast messages for success/errors
+6. Modal Windows:  For forms and confirmations
+7. Dropdown Menus:  For selections
+8. Status Badges:  Color -coded pills showing status
+9. Progress Bars:  For syllabus completion
+10. Tabs: For switching between views
+Accessibility Requir ements
+Clear contrast ratios
+Readable fonts (minimum 14px)
+Clear button labels
+Loading states for all actions
+Error messages that are helpful
+Notification System
+Bell icon  in top bar showing unread count
+Notifications for:
+
+--- PAGE 16 ---
+New demo requests (CSR, Scheduler)
+Class starting soon (T eacher , Student)
+Complaints received (HOD, Monitoring)
+Makeup class requests (Scheduler)
+Salary slips ready (T eachers)
+Leave requests (HR)
+TECHNICAL  NOTES FOR DEVELOPER
+User  Roles & Permissions Matrix
+Featur e Admin HOD Teacher Student Scheduler HR CSR Monitor
+View All Students ✓ ✓ Own only Own only ✓ ✗ ✗ ✗
+Manage Teachers ✓ ✓ ✗ ✗ ✗ ✓ ✗ ✗
+Mark Attendance ✗ ✗ ✓ ✓ ✗ ✗ ✗ ✗
+Schedule Classes ✓ ✓ ✗ ✗ ✓ ✗ ✗ ✗
+Submit Complaints ✗ ✗ ✗ ✓ ✗ ✗ ✗ ✓
+View Complaints ✓ ✓ ✗ Own only ✓ ✗ ✗ ✓
+Generate Reports ✓ ✓ ✗ ✗ ✗ ✓ ✗ ✗
+Manage Syllabus ✓ ✓ ✓ ✗ ✗ ✗ ✗ ✗
+Handle Demos ✓ ✗ ✗ ✗ ✓ ✗ ✓ ✗
+Key Database Entities
+1. Users (all roles)
+2. Students
+3. Teachers
+4. Classes
+5. Attendance
+6. Syllabus
+7. Progress Records
+8. Complaints
+
+--- PAGE 17 ---
+9. Demo Requests
+10. Leave Records
+11. Salary Records
+12. Notifications
+PRIORITY  FEA TURES (MVP  - PHASE 1)
+If building in phases, start with:
+1. User  Authentication  - Login for all roles
+2. CSR Demo Module  - Collect demo requests
+3. Scheduler  Basic  - Assign teachers to demos/classes
+4. Teacher  Portal  - View students, mark attendance
+5. Student Portal  - View schedule, mark attendance
+6. Basic HOD View - See all students/teachers
+PHASE 2 FEA TURES
+1. Progress tracking
+2. Syllabus management
+3. Complaint system
+4. HR attendance reports
+PHASE 3 FEA TURES
+1. Salary generation
+2. Advanced analytics
+3. Monitoring team module
+4. Full reporting system
+WIREFRAME PRIORITIES FOR DESIGNER
+Start with these scr eens first:
+1. Login page (common for all users)
+2. Dashboard (one for each role)
+3. Mark Attendance screen (T eacher & Student)
+
+--- PAGE 18 ---
+4. Today's Schedule (Scheduler)
+5. Student List (T eacher)
+6. Demo Request Form (CSR)
+Then move to:
+7. Complaints submission
+8. Progress tracking
+9. Reports pages
+10. Settings/Admin pages
+QUESTIONS TO FINALIZE BEFORE DESIGN
+1. Branding:  Do you have a logo/color scheme already?
+2. Language:  English only or need Urdu support?
+3. Time Zone:  Should system handle multiple time zones?
+4. Payment:  Will you integrate payment gateway later?
+5. Video Integration:  Are classes held on Zoom/Google Meet? Need integration?
+6. WhatsApp Integration:  Auto-send messages or manual?
+END OF  SPECIFICA TION DOCUMENT
+This document covers all modules, screens, features, and UI requirements. Share this with your designer to
+create wireframes and mockups. Let me know if you need any section expanded or clarified!
+
