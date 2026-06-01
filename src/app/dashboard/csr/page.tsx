@@ -1,167 +1,216 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Video, Search, Filter, Bell, Clock, CheckCircle2, XCircle,
-  Plus, Calendar, MoreVertical, ExternalLink, ArrowRight
+import { 
+  Users, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  Search, 
+  Filter, 
+  Plus,
+  MoreVertical,
+  ChevronRight,
+  Bell,
+  Globe
 } from "lucide-react";
 import { Sidebar, Navbar } from "@/components/dashboard-layout";
+import Link from "next/link";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import Link from "next/link";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function DemoDashboard() {
+export default function CSRDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
+  const [filterCountry, setFilterCountry] = useState("All");
 
+  // Updated Mock Data with Country
   const demos = [
-    { id: "DEM-101", student: "Zaid Ibrahim", guardian: "Ibrahim Ali", submitted: "2 hours ago", status: "Pending", phone: "+92 300 1234567" },
-    { id: "DEM-102", student: "Sara Ahmed", guardian: "Ahmed Khan", submitted: "5 hours ago", status: "Scheduled", phone: "+92 321 7654321" },
-    { id: "DEM-103", student: "Tariq Mansoor", guardian: "Mansoor Malik", submitted: "Yesterday", status: "Completed", phone: "+92 333 1122334" },
-    { id: "DEM-104", student: "Amira El-Sayed", guardian: "Sayed Omar", submitted: "2 days ago", status: "Cancelled", phone: "+92 312 9988776" },
-    { id: "DEM-105", student: "Yahya Hassan", guardian: "Hassan Ali", submitted: "3 days ago", status: "Pending", phone: "+92 301 4455667" },
+    { id: "DEM-001", student: "Zaid Ibrahim", guardian: "Ibrahim Khalil", submitted: "2 hours ago", status: "Pending", phone: "+92 300 1234567", country: "Pakistan" },
+    { id: "DEM-002", student: "Sara Ahmed", guardian: "Ahmed Malik", submitted: "5 hours ago", status: "Scheduled", phone: "+44 7700 900000", country: "United Kingdom" },
+    { id: "DEM-003", student: "Omar Farooq", guardian: "Farooq Aziz", submitted: "Yesterday", status: "Completed", phone: "+971 50 1234567", country: "United Arab Emirates" },
+    { id: "DEM-004", student: "Amira El-Sayed", guardian: "Mohamed El-Sayed", submitted: "Yesterday", status: "Cancelled", phone: "+1 202 555 0123", country: "United States" },
+    { id: "DEM-005", student: "Yousuf Khan", guardian: "Sajid Khan", submitted: "2 days ago", status: "Pending", phone: "+92 321 7654321", country: "Pakistan" },
   ];
 
+  const countries = ["All", "Pakistan", "United Kingdom", "United Arab Emirates", "United States", "Canada", "Australia"];
+
+  const filteredDemos = demos.filter(demo => {
+    const statusMatch = filterStatus === "All" || demo.status === filterStatus;
+    const countryMatch = filterCountry === "All" || demo.country === filterCountry;
+    return statusMatch && countryMatch;
+  });
+
   const pendingCount = demos.filter(d => d.status === "Pending").length;
-
-  const filteredDemos = filterStatus === "All" ? demos : demos.filter(d => d.status === filterStatus);
-
-  const statusStyles = {
-    Pending: "bg-amber-100 text-amber-600 border-amber-200",
-    Scheduled: "bg-blue-100 text-blue-600 border-blue-200",
-    Completed: "bg-emerald-100 text-emerald-600 border-emerald-200",
-    Cancelled: "bg-red-100 text-red-500 border-red-200",
-  };
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
       <Sidebar role="csr" className="hidden md:flex w-64 shrink-0" />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Navbar title="Demo Dashboard" onMenuClick={() => setSidebarOpen(true)} userName="Zoya Ahmed" userRole="CSR" />
+        <Navbar title="CSR Dashboard" onMenuClick={() => setSidebarOpen(true)} userName="Zoya Ahmed" userRole="CSR" />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-muted/30 space-y-6">
-          
-          {/* Notification Bar */}
-          {pendingCount > 0 && (
-            <div className="bg-amber-500 text-white px-6 py-4 rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell size={20} className="animate-bounce" />
-                <span className="text-[14px] font-bold">Action Needed: {pendingCount} demo requests are waiting to be scheduled.</span>
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-muted/30 custom-scrollbar">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[
+              { label: "Total Requests", value: "124", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+              { label: "Pending Scheduling", value: pendingCount.toString(), icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+              { label: "Demos Today", value: "8", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+              { label: "Conversion Rate", value: "64%", icon: AlertCircle, color: "text-primary", bg: "bg-primary/10" },
+            ].map((stat, i) => (
+              <div key={i} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={cn("p-2.5 rounded-xl", stat.bg)}>
+                    <stat.icon size={20} className={stat.color} />
+                  </div>
+                  <span className="text-[12px] font-bold text-muted-foreground">+12%</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-[13px] font-medium text-muted-foreground mt-1">{stat.label}</div>
               </div>
-              <button className="bg-white/20 hover:bg-white/30 transition-all px-4 py-1.5 rounded-lg text-[12px] font-bold flex items-center gap-2 border border-white/30 backdrop-blur-sm">
-                View Pending <ArrowRight size={14} />
-              </button>
+            ))}
+          </div>
+
+          {/* Action Alert */}
+          {pendingCount > 0 && (
+            <div className="mb-8 bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                  <Bell size={20} className="animate-bounce" />
+                </div>
+                <div>
+                  <h4 className="text-[14px] font-bold text-primary">Action Required</h4>
+                  <p className="text-[12px] text-primary/70 font-medium">You have {pendingCount} demo requests waiting to be scheduled.</p>
+                </div>
+              </div>
+              <Link 
+                href="/dashboard/csr/request"
+                className="h-9 px-4 bg-primary text-white rounded-lg text-[12px] font-bold flex items-center gap-2 hover:bg-primary/90 transition-all"
+              >
+                Schedule Now <ChevronRight size={14} />
+              </Link>
             </div>
           )}
 
-          {/* Stats & Quick Actions */}
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: "Total Demos", val: demos.length, icon: Video, color: "text-slate-600 bg-slate-100" },
-                { label: "Pending", val: pendingCount, icon: Clock, color: "text-amber-600 bg-amber-100" },
-                { label: "Scheduled", val: "1", icon: Calendar, color: "text-blue-600 bg-blue-100" },
-                { label: "Completed", val: "1", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-100" },
-              ].map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-2">
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", s.color)}>
-                    <s.icon size={16} />
+          {/* Table Controls */}
+          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-border space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h3 className="text-[16px] font-bold text-foreground">Demo Requests Queue</h3>
+                <Link 
+                  href="/dashboard/csr/request"
+                  className="h-10 px-4 bg-primary text-white rounded-xl text-[13px] font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <Plus size={18} /> New Request
+                </Link>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative flex-1 w-full">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input 
+                    type="text" 
+                    placeholder="Search student or guardian..."
+                    className="w-full h-10 bg-muted/50 border border-border rounded-xl pl-10 pr-4 text-[13px] focus:border-primary outline-none transition-all"
+                  />
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {/* Country Filter */}
+                  <div className="relative flex-1 sm:w-48">
+                    <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <select 
+                      className="w-full h-10 bg-muted/50 border border-border rounded-xl pl-9 pr-8 text-[12px] font-bold text-foreground focus:border-primary outline-none appearance-none cursor-pointer"
+                      value={filterCountry}
+                      onChange={(e) => setFilterCountry(e.target.value)}
+                    >
+                      {countries.map(c => (
+                        <option key={c} value={c} className="bg-card text-foreground">{c === "All" ? "All Countries" : c}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div>
-                    <div className="text-xl font-bold text-foreground leading-none">{s.val}</div>
-                    <div className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">{s.label}</div>
+                  
+                  {/* Status Filter */}
+                  <div className="relative flex-1 sm:w-40">
+                    <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <select 
+                      className="w-full h-10 bg-muted/50 border border-border rounded-xl pl-9 pr-8 text-[12px] font-bold text-foreground focus:border-primary outline-none appearance-none cursor-pointer"
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                      {["All", "Pending", "Scheduled", "Completed", "Cancelled"].map(s => (
+                        <option key={s} value={s} className="bg-card text-foreground">{s}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className="shrink-0 flex items-center gap-3">
-              <Link href="/dashboard/csr/request" className="h-full px-6 bg-primary text-white rounded-2xl text-[14px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all min-w-[160px]">
-                <Plus size={20} />
-                <span>New Request</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Demos Table */}
-          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-border bg-muted/20 flex flex-wrap items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-sm">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="text" 
-                  placeholder="Search student or guardian..."
-                  className="w-full h-10 bg-card border border-border rounded-xl pl-9 pr-3 text-[13px] font-medium focus:border-primary outline-none transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                {["All", "Pending", "Scheduled", "Completed", "Cancelled"].map(s => (
-                  <button 
-                    key={s} 
-                    onClick={() => setFilterStatus(s)}
-                    className={cn(
-                      "h-8 px-3 rounded-lg text-[11px] font-bold transition-all",
-                      filterStatus === s ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-muted/10">
-                    <th className="p-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border">Student / Guardian</th>
-                    <th className="p-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border">Contact</th>
-                    <th className="p-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border">Submitted</th>
-                    <th className="p-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border">Status</th>
-                    <th className="p-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest border-b border-border text-right">Actions</th>
+                  <tr className="bg-muted/20">
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">ID / Submitted</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Student / Guardian</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Location</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Contact</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredDemos.map((demo) => (
-                    <tr key={demo.id} className="hover:bg-muted/5 transition-colors group">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[12px]">
-                            {demo.student.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <div className="text-[14px] font-bold text-foreground leading-tight">{demo.student}</div>
-                            <div className="text-[11px] text-muted-foreground font-medium mt-1">Guardian: {demo.guardian}</div>
-                          </div>
+                    <tr key={demo.id} className="hover:bg-muted/10 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-foreground">{demo.id}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{demo.submitted}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-foreground">{demo.student}</div>
+                        <div className="text-[12px] text-muted-foreground font-medium">{demo.guardian}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 text-[12px] font-bold text-foreground">
+                          <Globe size={14} className="text-primary" />
+                          {demo.country}
                         </div>
                       </td>
-                      <td className="p-4 text-[13px] font-semibold text-muted-foreground">{demo.phone}</td>
-                      <td className="p-4 text-[13px] font-medium text-muted-foreground">{demo.submitted}</td>
-                      <td className="p-4">
+                      <td className="px-6 py-4 text-[12px] font-medium text-foreground">
+                        {demo.phone}
+                      </td>
+                      <td className="px-6 py-4">
                         <span className={cn(
-                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                          statusStyles[demo.status as keyof typeof statusStyles]
+                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          demo.status === "Pending" && "bg-amber-100 text-amber-600",
+                          demo.status === "Scheduled" && "bg-blue-100 text-blue-600",
+                          demo.status === "Completed" && "bg-emerald-100 text-emerald-600",
+                          demo.status === "Cancelled" && "bg-red-100 text-red-600",
                         )}>
                           {demo.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 text-muted-foreground hover:text-primary transition-all">
-                            <ExternalLink size={16} />
-                          </button>
-                          <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-all">
-                            <MoreVertical size={16} />
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 text-right">
+                        <button className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground">
+                          <MoreVertical size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {filteredDemos.length === 0 && (
+                <div className="p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <Filter size={24} className="text-muted-foreground" />
+                  </div>
+                  <h4 className="text-[15px] font-bold text-foreground">No requests found</h4>
+                  <p className="text-[13px] text-muted-foreground mt-1">Try adjusting your filters to find what you're looking for.</p>
+                </div>
+              )}
             </div>
           </div>
         </main>

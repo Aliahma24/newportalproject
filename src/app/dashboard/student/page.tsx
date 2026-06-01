@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Clock, 
-  Video, 
-  TrendingUp, 
-  CalendarClock, 
-  ClipboardList, 
-  Mic, 
-  FileText, 
-  UploadCloud,
-  X
+  Clock, CheckCircle2, Video, BookOpen, Calendar, 
+  AlertCircle, ShieldCheck, ArrowRight, Star,
+  BellRing, PlayCircle, History, User
 } from "lucide-react";
 import { Sidebar, Navbar } from "@/components/dashboard-layout";
+import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -22,259 +17,242 @@ function cn(...inputs: ClassValue[]) {
 
 export default function StudentDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Mock Class Data (e.g., Class at 07:00 PM - Assuming current time testing)
+  const classStartTime = new Date();
+  classStartTime.setHours(19, 0, 0); // 7:00 PM
+  const classEndTime = new Date();
+  classEndTime.setHours(20, 0, 0); // 8:00 PM
 
-  const [attendanceStatus, setAttendanceStatus] = useState<"none" | "present" | "late">("none");
+  const [attendance, setAttendance] = useState<{ marked: boolean; time: string | null }>({
+    marked: false,
+    time: null
+  });
+
+  const [classStatus, setClassStatus] = useState<"Locked" | "Joinable" | "Ended">("Locked");
+
+  // Time Logic: Sync current time and check class window
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      
+      if (now < classStartTime) setClassStatus("Locked");
+      else if (now >= classStartTime && now <= classEndTime) setClassStatus("Joinable");
+      else setClassStatus("Ended");
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [classStartTime, classEndTime]);
+
+  const handleMarkPresent = () => {
+    if (classStatus !== "Joinable") return;
+    const now = new Date();
+    setAttendance({
+      marked: true,
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    });
+  };
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
-      {/* Desktop Sidebar */}
       <Sidebar role="student" className="hidden md:flex w-64 shrink-0" />
 
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-72 h-full animate-in slide-in-from-left duration-300">
-            <Sidebar role="student" className="w-full" />
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-lg"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
         <Navbar 
-          title="Student Dashboard" 
+          title="Learning Portal" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Omar Farooq"
-          userRole="Hifz Student"
-          userAvatar="https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F18-25%2FMiddle%20Eastern%2F1"
-          hideSearch
+          userName="Zayd Ibrahim"
+          userRole="Student"
         />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar">
-          
-          {/* ROW 1: Next Class Card + Attendance Verification */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 bg-card border border-border border-l-4 border-l-primary rounded-xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm relative overflow-hidden">
-              <div className="space-y-3 flex-1 relative z-10">
-                <div className="text-[11px] font-bold text-primary uppercase tracking-wider">Upcoming Class</div>
-                <h2 className="text-2xl md:text-[26px] font-bold text-foreground leading-tight">Hifz Revision - Group B</h2>
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                  <Clock size={16} />
-                  Starts in 15 mins (10:00 AM)
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                   <span className="bg-muted px-2 py-1 rounded text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Tajweed</span>
-                   <span className="bg-muted px-2 py-1 rounded text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Memorization</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 pr-0 md:pr-12 md:border-r border-border shrink-0 relative z-10">
-                 <img 
-                    src="https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F25-35%2FSouth%20Asian%2F5" 
-                    alt="Teacher" 
-                    className="h-12 w-12 rounded-full border-2 border-card bg-muted object-cover"
-                 />
-                 <div>
-                    <div className="text-[15px] font-bold text-foreground">Ustadha Aisha</div>
-                    <div className="text-xs font-semibold text-muted-foreground">Instructor</div>
-                 </div>
-              </div>
-
-              <button className="w-full md:w-[200px] h-14 rounded-xl bg-[#2D8CFF] text-white font-bold flex flex-col items-center justify-center gap-0 hover:bg-[#2D8CFF]/90 transition-all active:scale-[0.98] shrink-0 shadow-xl shadow-blue-500/20 relative z-10 group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                <div className="flex items-center gap-2">
-                   <Video size={20} fill="white" />
-                   <span className="text-[15px]">Join Zoom Class</span>
-                </div>
-                <div className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-0.5">Room ID: 882-991-002</div>
-              </button>
-            </div>
-
-            {/* Attendance Verification Card (Spec Section 14) */}
-            <div className="bg-card border border-border rounded-xl p-6 flex flex-col justify-center gap-4 shadow-sm relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <CalendarClock size={80} />
-               </div>
-               <div className="space-y-1">
-                  <h3 className="text-[15px] font-bold text-foreground">Attendance Verification</h3>
-                  <p className="text-[12px] font-medium text-muted-foreground">Double verification required for class credit.</p>
-               </div>
-               
-               {attendanceStatus === "none" ? (
-                 <div className="space-y-3">
-                   <button 
-                     onClick={() => setAttendanceStatus("present")}
-                     className="w-full h-11 rounded-lg bg-emerald-500 text-white font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/10"
-                   >
-                     Mark Me Present
-                   </button>
-                   <div className="flex items-center justify-center gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Class window active
-                   </div>
-                 </div>
-               ) : (
-                 <div className="h-20 bg-emerald-50 border border-emerald-100 rounded-lg flex flex-col items-center justify-center text-center px-4 animate-in fade-in zoom-in duration-300">
-                    <div className="flex items-center gap-2 text-emerald-600 font-bold text-[15px]">
-                       <TrendingUp size={18} /> Attendance Marked!
-                    </div>
-                    <p className="text-[11px] font-bold text-emerald-600/70 mt-1 uppercase">Double Verified @ 09:58 AM</p>
-                 </div>
-               )}
-            </div>
-          </div>
-
-          {/* ROW 2: Progress & Schedule */}
-          <div className="flex flex-col lg:flex-row gap-6">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 bg-muted/30">
+          <div className="max-w-5xl mx-auto space-y-10">
             
-            {/* Progress Card */}
-            <div className="flex-1 bg-card border border-border rounded-xl p-6 flex flex-col shadow-sm">
-              <div className="text-base font-bold text-foreground flex items-center gap-2.5 mb-6">
-                <TrendingUp size={18} className="text-primary" />
-                Course Progress
+            {/* Welcome & Clock */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card border border-border p-8 rounded-[40px] shadow-2xl shadow-primary/5">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-[24px] bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                  <User size={32} />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, Zayd</h1>
+                  <p className="text-[14px] font-bold text-muted-foreground mt-1">Ready for your Tajweed session today?</p>
+                </div>
               </div>
-              
-              <div className="flex-1 flex flex-col items-center justify-center gap-8">
-                 <div className="relative w-[140px] h-[140px] flex items-center justify-center">
-                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 140 140">
-                       <circle cx="70" cy="70" r="62" fill="none" strokeWidth="10" strokeLinecap="round" className="stroke-muted" />
-                       {/* 68% of circumference (389.55) = 264.89 (dasharray), remainder is offset */}
-                       <circle cx="70" cy="70" r="62" fill="none" strokeWidth="10" strokeLinecap="round" className="stroke-primary" strokeDasharray="389.55" strokeDashoffset="124.66" />
-                    </svg>
-                    <div className="text-center">
-                       <div className="text-4xl font-bold text-foreground leading-none">68%</div>
-                       <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mt-1.5">Completed</div>
-                    </div>
-                 </div>
-
-                 <div className="w-full space-y-3">
-                    <div className="flex items-center justify-between pb-3 border-b border-muted">
-                       <span className="text-sm font-semibold text-muted-foreground">Modules Completed</span>
-                       <span className="text-sm font-bold text-foreground">12 / 18</span>
-                    </div>
-                    <div className="flex items-center justify-between pb-1">
-                       <span className="text-sm font-semibold text-muted-foreground">Current Grade</span>
-                       <span className="text-sm font-bold text-emerald-500">A- (92%)</span>
-                    </div>
-                 </div>
+              <div className="flex items-center gap-4 bg-muted/50 px-6 py-4 rounded-3xl border border-border">
+                <Clock size={24} className="text-primary animate-pulse" />
+                <div className="text-right">
+                  <div className="text-2xl font-black text-foreground tabular-nums">
+                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Current Time</div>
+                </div>
               </div>
             </div>
 
-            {/* Today's Schedule Card */}
-            <div className="flex-[2] bg-card border border-border rounded-xl p-6 flex flex-col shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                 <div className="text-base font-bold text-foreground flex items-center gap-2.5">
-                   <CalendarClock size={18} className="text-primary" />
-                   Today's Schedule
-                 </div>
-                 <div className="bg-muted px-2.5 py-1 rounded text-[10px] font-bold text-foreground uppercase tracking-wide">
-                    3 Classes
-                 </div>
+            {/* Active Class Card */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary/5 rounded-[48px] blur-2xl group-hover:bg-primary/10 transition-all" />
+              <div className="relative bg-card border border-border rounded-[48px] overflow-hidden shadow-2xl">
+                <div className="grid grid-cols-1 lg:grid-cols-5 h-full">
+                  
+                  {/* Left Info Section */}
+                  <div className="lg:col-span-3 p-10 md:p-12 space-y-8">
+                    <div className="flex items-center gap-3">
+                       <span className={cn(
+                         "px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                         classStatus === "Joinable" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                       )}>
+                         {classStatus === "Joinable" ? "● Live Now" : classStatus === "Locked" ? "Scheduled" : "Ended"}
+                       </span>
+                       <span className="text-[11px] font-bold text-muted-foreground">Tajweed Basics • Ustadh Bilal</span>
+                    </div>
+
+                    <div className="space-y-2">
+                       <h2 className="text-5xl font-black text-foreground uppercase tracking-tighter leading-tight">Mastering Madd <br/> & Articulation</h2>
+                       <p className="text-[16px] font-bold text-muted-foreground max-w-md">Your 60-minute session will focus on the rules of Madd-e-Muttasil.</p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-6 items-center">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground border border-border">
+                             <Calendar size={18} />
+                          </div>
+                          <div>
+                             <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Date</div>
+                             <div className="text-[14px] font-black">Mon, 12 May</div>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground border border-border">
+                             <Clock size={18} />
+                          </div>
+                          <div>
+                             <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Time Slot</div>
+                             <div className="text-[14px] font-black">07:00 PM - 08:00 PM</div>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="pt-4">
+                      {!attendance.marked ? (
+                        <button 
+                          onClick={() => {
+                            const now = new Date();
+                            setAttendance({
+                              marked: true,
+                              time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                            });
+                            // Mock: window.open('zoom-link', '_blank');
+                          }}
+                          disabled={classStatus !== "Joinable"}
+                          className={cn(
+                            "h-16 px-12 rounded-3xl text-[15px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3 group/btn",
+                            classStatus === "Joinable" 
+                              ? "bg-primary text-white shadow-primary/20 hover:scale-105 active:scale-95" 
+                              : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
+                          )}
+                        >
+                          <PlayCircle size={24} /> Enter Classroom & Log Presence
+                        </button>
+                      ) : (
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                           <div className="h-16 px-8 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl flex items-center gap-4">
+                              <CheckCircle2 size={24} className="text-emerald-500" />
+                              <div>
+                                 <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Attendance Logged</div>
+                                 <div className="text-[14px] font-black">{attendance.time}</div>
+                              </div>
+                           </div>
+                           <button className="h-16 px-10 bg-primary text-white rounded-3xl text-[13px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary/90 transition-all shadow-xl shadow-primary/20">
+                              Re-join Session
+                           </button>
+                        </div>
+                      )}
+                      <p className="text-[11px] font-bold text-muted-foreground mt-4 flex items-center gap-2">
+                        <ShieldCheck size={14} className="text-emerald-500" /> 
+                        {classStatus === "Locked" ? "Classroom unlocks at 07:00 PM. Attendance is logged automatically upon entry." : "By clicking join, your presence timestamp is instantly shared with the HOD."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Teacher/Media Section */}
+                  <div className="lg:col-span-2 bg-muted/40 border-l border-border p-10 flex flex-col justify-between">
+                    <div className="space-y-6 text-center lg:text-left">
+                       <div className="w-32 h-32 rounded-[40px] bg-card border border-border p-1 mx-auto lg:mx-0">
+                          <div className="w-full h-full rounded-[38px] bg-primary/10 flex items-center justify-center text-primary text-4xl font-black shadow-inner">
+                             HU
+                          </div>
+                       </div>
+                       <div>
+                          <h4 className="text-2xl font-black text-foreground uppercase tracking-tight">Ustadh Bilal</h4>
+                          <p className="text-[13px] font-bold text-muted-foreground mt-1">Senior Tajweed Instructor</p>
+                       </div>
+                       <div className="flex justify-center lg:justify-start gap-1">
+                          {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="currentColor" className="text-amber-500" />)}
+                       </div>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-3xl p-6 mt-8 space-y-4">
+                       <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Compliance Status</span>
+                          <ShieldCheck size={18} className="text-emerald-500" />
+                       </div>
+                       <p className="text-[12px] font-bold text-muted-foreground leading-relaxed">
+                         Meeting attendance is cross-verified with Zoom entry logs. False presence triggers an automatic HOD audit.
+                       </p>
+                    </div>
+                  </div>
+
+                </div>
               </div>
+            </div>
 
-              <div className="flex-1 flex flex-col gap-3">
-                 {/* Live Item */}
-                 <div className="flex items-center gap-5 p-4 rounded-lg border border-primary bg-primary/5 cursor-pointer group">
-                    <div className="w-20 text-[15px] font-bold text-primary shrink-0">10:00 AM</div>
-                    <div className="flex-1 min-w-0">
-                       <div className="text-base font-bold text-foreground truncate">Hifz Revision - Group B</div>
-                       <div className="text-[13px] font-semibold text-muted-foreground mt-1">Virtual Room 1 • Ustadha Aisha</div>
-                    </div>
-                    <div className="text-[13px] font-bold text-primary flex items-center gap-2 shrink-0">
-                       <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Live Now
-                    </div>
-                 </div>
+            {/* Bottom Grid: History & Next Class */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="bg-card border border-border rounded-[40px] p-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                     <h3 className="text-[16px] font-black text-foreground uppercase tracking-tight flex items-center gap-3">
+                        <History size={20} className="text-primary" /> Recent Lessons
+                     </h3>
+                     <button className="text-[11px] font-black text-primary uppercase tracking-widest hover:underline">View Full Log</button>
+                  </div>
+                  <div className="space-y-4">
+                     {[1,2].map(i => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-2xl">
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center text-primary font-black">0{i}</div>
+                              <div>
+                                 <div className="text-[13px] font-bold text-foreground">Tajweed Session {i+4}</div>
+                                 <div className="text-[11px] font-medium text-muted-foreground">Completed • 45 mins</div>
+                              </div>
+                           </div>
+                           <button className="text-muted-foreground hover:text-primary transition-all">
+                              <ArrowRight size={18} />
+                           </button>
+                        </div>
+                     ))}
+                  </div>
+               </div>
 
-                 {/* Upcoming Item */}
-                 <div className="flex items-center gap-5 p-4 rounded-lg border border-border bg-background cursor-pointer hover:border-primary/30 transition-all">
-                    <div className="w-20 text-[15px] font-bold text-foreground shrink-0">02:30 PM</div>
-                    <div className="flex-1 min-w-0">
-                       <div className="text-base font-bold text-foreground truncate">Tajweed Rules (Ghunnah)</div>
-                       <div className="text-[13px] font-semibold text-muted-foreground mt-1">Virtual Room 3 • Ustadh Bilal</div>
-                    </div>
-                    <div className="text-[13px] font-bold text-muted-foreground shrink-0">Upcoming</div>
-                 </div>
-
-                 {/* Self-Paced Item */}
-                 <div className="flex items-center gap-5 p-4 rounded-lg border border-border bg-background cursor-pointer hover:border-primary/30 transition-all">
-                    <div className="w-20 text-[15px] font-bold text-foreground shrink-0">04:00 PM</div>
-                    <div className="flex-1 min-w-0">
-                       <div className="text-base font-bold text-foreground truncate">Islamic History - Prophets</div>
-                       <div className="text-[13px] font-semibold text-muted-foreground mt-1">Self-paced study • Module 4</div>
-                    </div>
-                    <div className="text-[13px] font-bold text-muted-foreground shrink-0">Self-Paced</div>
-                 </div>
-              </div>
+               <div className="bg-primary p-8 rounded-[40px] text-white space-y-6 relative overflow-hidden group shadow-2xl shadow-primary/20">
+                  <div className="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700" 
+                       style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='none' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E")` }} />
+                  <div className="relative z-10">
+                     <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4">
+                        <BellRing size={24} />
+                     </div>
+                     <h3 className="text-2xl font-black uppercase tracking-tight">Next Class Reminder</h3>
+                     <p className="text-[14px] font-bold opacity-80 mt-2">Your next session is scheduled for tomorrow at 08:00 AM.</p>
+                     <button className="mt-8 h-12 px-8 bg-white text-primary rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-white/90 transition-all active:scale-95">
+                        Add to Calendar
+                     </button>
+                  </div>
+               </div>
             </div>
 
           </div>
-
-          {/* ROW 3: Assignments Preview & Submit */}
-          <div className="flex flex-col lg:flex-row gap-6">
-            
-            {/* Assignments List */}
-            <div className="flex-[2] bg-card border border-border rounded-xl p-6 flex flex-col shadow-sm">
-              <div className="flex items-center justify-between mb-5">
-                 <div className="text-base font-bold text-foreground flex items-center gap-2.5">
-                   <ClipboardList size={18} className="text-primary" />
-                   Pending Assignments
-                 </div>
-                 <button className="text-xs font-bold text-primary uppercase tracking-wide hover:underline">
-                    View All
-                 </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                 {/* Assignment 1 */}
-                 <div className="flex items-start gap-3.5 p-4 rounded-lg border border-border bg-background cursor-pointer hover:border-primary/30 transition-all">
-                    <div className="w-10 h-10 rounded-lg bg-muted text-primary flex items-center justify-center shrink-0">
-                       <Mic size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                       <div className="text-sm font-bold text-foreground truncate">Surah Al-Baqarah (v. 100-110)</div>
-                       <div className="text-xs font-semibold text-muted-foreground">Due Tomorrow, 11:59 PM</div>
-                    </div>
-                    <div className="bg-amber-500/10 text-amber-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide shrink-0">
-                       Pending
-                    </div>
-                 </div>
-
-                 {/* Assignment 2 */}
-                 <div className="flex items-start gap-3.5 p-4 rounded-lg border border-border bg-background cursor-pointer hover:border-primary/30 transition-all">
-                    <div className="w-10 h-10 rounded-lg bg-muted text-primary flex items-center justify-center shrink-0">
-                       <FileText size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                       <div className="text-sm font-bold text-foreground truncate">Tajweed Quiz #4</div>
-                       <div className="text-xs font-semibold text-muted-foreground">Due Oct 26, 11:59 PM</div>
-                    </div>
-                    <div className="bg-amber-500/10 text-amber-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide shrink-0">
-                       Pending
-                    </div>
-                 </div>
-              </div>
-            </div>
-
-            {/* Submit Action Card */}
-            <div className="flex-1 bg-card border border-dashed border-border rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm min-h-[160px] gap-4">
-              <div>
-                 <div className="text-[15px] font-bold text-foreground mb-1">Ready to submit?</div>
-                 <div className="text-xs font-semibold text-muted-foreground">Upload audio recordings or documents</div>
-              </div>
-              <button className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-                 <UploadCloud size={18} />
-                 Submit Assignment
-              </button>
-            </div>
-
-          </div>
-
         </main>
       </div>
     </div>

@@ -1,23 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Clock,
-  Users,
-  MonitorPlay,
-  Video,
-  ClipboardCheck,
-  FileEdit,
-  CheckCircle,
-  X,
-  TrendingUp,
-  Calendar,
-  MessageSquare,
-  AlertCircle,
-  ChevronRight,
-  MoreVertical
+  Users, CheckCircle2, PlayCircle, Clock, 
+  MessageSquare, AlertTriangle, BookOpen, 
+  BarChart2, ShieldCheck, ChevronRight,
+  TrendingUp, Star, Calendar, FileText, AlertCircle
 } from "lucide-react";
 import { Sidebar, Navbar } from "@/components/dashboard-layout";
+import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -27,319 +18,526 @@ function cn(...inputs: ClassValue[]) {
 
 export default function TeacherDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Mock Class Data (e.g., Active 07:00 PM - 08:00 PM)
+  const classStartTime = new Date();
+  classStartTime.setHours(19, 0, 0); 
+  const classEndTime = new Date();
+  classEndTime.setHours(20, 0, 0);
 
-  // Mock stats
-  const stats = [
-    { label: "Classes Today", value: "4", icon: Calendar, trend: "+1 vs yesterday", trendType: "positive" },
-    { label: "Active Students", value: "32", icon: Users, trend: "Consistent", trendType: "neutral" },
-    { label: "Attendance Rate", value: "98.5%", icon: ClipboardCheck, trend: "+2.1%", trendType: "positive" },
-    { label: "Assignments", value: "12", icon: FileEdit, trend: "6 new submissions", trendType: "warning" },
-  ];
+  const [attendance, setAttendance] = useState<{ marked: boolean; time: string | null }>({
+    marked: false,
+    time: null
+  });
 
-  // Mock student data for current class
-  const [students, setStudents] = useState([
-    { id: "1042", name: "Ali Khan", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F18-25%2FMiddle%20Eastern%2F1", status: "present" },
-    { id: "1045", name: "Fatima Zahra", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F18-25%2FSouth%20Asian%2F2", status: "present" },
-    { id: "1048", name: "Omar Farooq", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F18-25%2FAfrican%2F3", status: "absent" },
-    { id: "1051", name: "Zainab Ali", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F18-25%2FMiddle%20Eastern%2F4", status: "present" },
-    { id: "1054", name: "Bilal Ahmed", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F18-25%2FSouth%20Asian%2F5", status: "present" },
-    { id: "1059", name: "Aisha Siddiqa", avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F18-25%2FAfrican%2F6", status: "present" },
-  ]);
+  const [classStatus, setClassStatus] = useState<"Locked" | "Live" | "Ended">("Locked");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Command Center");
+  const [selectedAuditDate, setSelectedAuditDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const upcomingClasses = [
-    { time: "12:00 PM", name: "Tajweed Basics", group: "Group C", students: 12 },
-    { time: "02:30 PM", name: "Noorani Qaida", group: "Beginners", students: 8 },
-    { time: "04:00 PM", name: "Islamic Studies", group: "Advanced", students: 20 },
-  ];
-
-  const toggleStatus = (id: string, status: "present" | "absent") => {
-    setStudents(students.map(s => s.id === id ? { ...s, status } : s));
+  // Analytics Mock Data
+  const stats = {
+    today: 6,
+    week: 34,
+    month: 128,
+    lateStarts: 2,
+    cancelled: {
+      teacher: 1,
+      student: 3,
+      technical: 0
+    }
   };
 
-  const markAllPresent = () => {
-    setStudents(students.map(s => ({ ...s, status: "present" })));
-  };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      if (now < classStartTime) setClassStatus("Locked");
+      else if (now >= classStartTime && now <= classEndTime) setClassStatus("Live");
+      else setClassStatus("Ended");
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [classStartTime, classEndTime]);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden font-sans text-foreground">
-      {/* Desktop Sidebar */}
+    <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
       <Sidebar role="teacher" className="hidden md:flex w-64 shrink-0" />
 
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-72 h-full animate-in slide-in-from-left duration-300">
-            <Sidebar role="teacher" className="w-full" />
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
         <Navbar 
-          title="Teacher Dashboard" 
+          title="Teacher Command Center" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Ustadha Aisha"
-          userRole="Senior Teacher"
-          userAvatar="https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F25-35%2FSouth%20Asian%2F5"
-          hideSearch
+          userName="Ustadh Bilal"
+          userRole="Senior Instructor"
         />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar bg-slate-50/50">
-          
-          {/* Greeting Section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Welcome back, Ustadha Aisha! 👋</h2>
-              <p className="text-muted-foreground font-medium mt-1">You have 4 classes scheduled for today. Your first class is currently live.</p>
-            </div>
-            <div className="flex gap-3 shrink-0">
-              <button className="h-10 px-4 rounded-lg bg-card border border-border text-foreground font-bold text-sm flex items-center gap-2 hover:bg-muted transition-all shadow-sm">
-                <Calendar size={16} />
-                View Full Schedule
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0">
-            {stats.map((stat, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    <stat.icon size={24} />
-                  </div>
-                  <div className={cn(
-                    "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                    stat.trendType === "positive" ? "bg-emerald-500/10 text-emerald-600" : 
-                    stat.trendType === "warning" ? "bg-amber-500/10 text-amber-600" : "bg-slate-500/10 text-slate-600"
-                  )}>
-                    {stat.trend}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold text-foreground leading-none">{stat.value}</div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Active Session & Attendance */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 min-h-0">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 bg-muted/30">
+          <div className="max-w-[1600px] mx-auto space-y-8">
             
-            {/* Left: Active Session Card */}
-            <div className="xl:col-span-2 space-y-6">
-              
-              <div className="relative overflow-hidden bg-card border border-border border-l-4 border-l-primary rounded-2xl shadow-sm">
-                {/* Decorative Pattern */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 pointer-events-none" />
-                
-                <div className="p-6 md:p-8 relative z-10">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                          LIVE NOW
-                        </span>
-                        <div className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-                          <Clock size={16} />
-                          10:00 AM - 11:30 AM
-                        </div>
-                      </div>
-                      <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight text-balance">Hifz Revision - Group B</h2>
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div className="flex items-center gap-2.5 text-[15px] font-semibold text-muted-foreground">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                             <Users size={18} />
-                          </div>
-                          6 Students Enrolled
-                        </div>
-                        <div className="flex items-center gap-2.5 text-[15px] font-semibold text-muted-foreground">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                             <MonitorPlay size={18} />
-                          </div>
-                          Virtual Room 1
-                        </div>
-                      </div>
-                    </div>
-                    <button className="h-16 px-8 rounded-2xl bg-[#2D8CFF] text-white font-bold flex flex-col items-center justify-center gap-0 hover:bg-[#2D8CFF]/90 hover:scale-[1.02] transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-2xl shadow-blue-500/30 group overflow-hidden relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                      <div className="flex items-center gap-3">
-                         <Video size={24} fill="white" />
-                         <span className="text-lg">Start Zoom Class</span>
-                      </div>
-                      <div className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-0.5">Host Room: 882-991-002</div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Attendance Preview */}
-              <div className="bg-card border border-border rounded-2xl shadow-sm flex flex-col overflow-hidden">
-                <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <ClipboardCheck size={20} />
-                    </div>
-                    <h3 className="text-lg font-bold text-foreground">Current Class Attendance</h3>
-                  </div>
-                  <button 
-                    onClick={markAllPresent}
-                    className="h-10 px-5 rounded-lg border-2 border-primary text-primary font-bold text-sm hover:bg-primary/5 transition-all"
-                  >
-                    Mark All Present
-                  </button>
-                </div>
-
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {students.map((student) => (
-                    <div key={student.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-slate-50/50 hover:bg-white hover:border-primary/30 hover:shadow-sm transition-all group">
-                      <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-white bg-slate-200 shrink-0 shadow-sm">
-                        <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold text-foreground truncate group-hover:text-primary transition-colors">{student.name}</div>
-                        <div className="text-xs font-semibold text-muted-foreground">ID: {student.id}</div>
-                      </div>
-                      <div className="flex bg-slate-200/50 rounded-lg p-1 gap-1 shrink-0">
-                        <button 
-                          onClick={() => toggleStatus(student.id, "present")}
-                          className={cn(
-                            "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
-                            student.status === "present" 
-                              ? "bg-primary text-primary-foreground shadow-md" 
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          P
-                        </button>
-                        <button 
-                          onClick={() => toggleStatus(student.id, "absent")}
-                          className={cn(
-                            "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
-                            student.status === "absent" 
-                              ? "bg-primary text-primary-foreground shadow-md" 
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          A
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Session Notes Inside Card */}
-                <div className="p-6 border-t border-border bg-slate-50/30 space-y-4">
-                  <div className="flex items-center gap-2.5 text-[15px] font-bold text-foreground">
-                    <FileEdit size={18} className="text-primary" />
-                    Session Notes & Lessons
-                  </div>
-                  <textarea 
-                    className="w-full bg-white border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl p-4 text-sm text-foreground outline-none resize-none transition-all shadow-sm min-h-[120px]"
-                    placeholder="Add specific notes for today's session..."
-                    defaultValue="Reviewing Surah Al-Baqarah verses 100-120. Focus on Tajweed rules for Ghunnah today. Ensure all students recite at least once."
-                  />
-                  <div className="flex justify-end pt-2">
-                    <button className="h-11 px-8 rounded-lg bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-lg shadow-primary/20">
-                      <CheckCircle size={18} />
-                      Complete Session & Save
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-8 border-b border-border mb-4">
+              {["Command Center", "Workstation Analytics", "Secure Chat", "Requests"].map(tab => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "text-[12px] font-black uppercase tracking-widest pb-4 border-b-2 transition-all",
+                    activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
-            {/* Right Side: Sidebar Info */}
-            <div className="space-y-6">
-              
-              {/* Upcoming Classes */}
-              <div className="bg-card border border-border rounded-2xl shadow-sm flex flex-col overflow-hidden">
-                <div className="p-5 border-b border-border bg-slate-50/50 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Calendar size={16} className="text-primary" />
-                    Up Next Today
-                  </h3>
-                  <button className="text-[11px] font-bold text-primary uppercase tracking-wider hover:underline">Full View</button>
-                </div>
-                <div className="p-2 divide-y divide-border">
-                  {upcomingClasses.map((cls, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-colors">
-                      <div className="space-y-1">
-                        <div className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">{cls.name}</div>
-                        <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-                          <span className="text-primary">{cls.time}</span>
-                          <span>•</span>
-                          <span>{cls.group}</span>
-                        </div>
+            <AnimatePresence mode="wait">
+              {activeTab === "Command Center" && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  className="space-y-8"
+                >
+                  {/* Header: Status & Quick Audit */}
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-[24px] bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                        <Star size={32} />
                       </div>
-                      <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-1 transition-all" />
+                      <div>
+                         <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, Ustadh Bilal</h1>
+                         <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md uppercase tracking-widest">Grade A Faculty</span>
+                            <span className="text-[12px] font-bold text-muted-foreground">Verified Premium Account</span>
+                         </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Announcements / Quick Tasks */}
-              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                  <AlertCircle size={18} />
-                  Important Updates
-                </div>
-                <div className="space-y-3">
-                  <div className="p-3 bg-white border border-primary/10 rounded-xl shadow-sm">
-                    <div className="text-[13px] font-bold text-foreground">Monthly Progress Reports</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Submission deadline is this Friday. Please update all student grades.</p>
+                    <div className="flex items-center gap-4 bg-card border border-border p-4 rounded-3xl shadow-xl shadow-primary/5">
+                       <div className="text-right">
+                          <div className="text-xl font-black text-foreground tabular-nums">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Session Sync</div>
+                       </div>
+                       <div className="h-10 w-[1px] bg-border mx-1" />
+                       <button 
+                         onClick={() => setReportModalOpen(true)}
+                         className="h-12 px-6 bg-destructive/10 text-destructive border border-destructive/20 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all flex items-center gap-2"
+                       >
+                          <AlertTriangle size={16} /> File Report to HOD
+                       </button>
+                    </div>
                   </div>
-                  <div className="p-3 bg-white border border-primary/10 rounded-xl shadow-sm">
-                    <div className="text-[13px] font-bold text-foreground">New Assignment: Tajweed Rules</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Material uploaded for Group C. Review in the next session.</p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Messages Preview */}
-              <div className="bg-card border border-border rounded-2xl shadow-sm p-5 space-y-4">
-                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <MessageSquare size={16} className="text-primary" />
-                      Recent Messages
-                    </h3>
-                    <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-md">3</div>
-                 </div>
-                 <div className="space-y-4">
-                    {[1, 2].map((m) => (
-                      <div key={m} className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 shrink-0 border border-border overflow-hidden">
-                           <img src={`https://i.pravatar.cc/150?u=${m}`} alt="User" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-center mb-0.5">
-                            <span className="text-[12px] font-bold text-foreground">Parent of Ali</span>
-                            <span className="text-[10px] text-muted-foreground">10:45 AM</span>
+                  {/* Live Session Management */}
+                  <div className="bg-card border border-border rounded-[48px] overflow-hidden shadow-2xl relative">
+                    <div className={cn(
+                      "absolute top-0 left-0 w-full h-2",
+                      classStatus === "Live" ? "bg-emerald-500 animate-pulse" : "bg-muted"
+                    )} />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-3">
+                       <div className="lg:col-span-2 p-10 md:p-12 space-y-8 border-r border-border">
+                          <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground border border-border">
+                                <BookOpen size={24} />
+                             </div>
+                             <div>
+                                <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Current Active Slot</div>
+                                <div className="text-2xl font-black text-foreground uppercase tracking-tight">07:00 PM - 08:00 PM Session</div>
+                             </div>
                           </div>
-                          <p className="text-[11px] text-muted-foreground line-clamp-1">Assalam o Alaikum Ustadha, Ali will be late today...</p>
+
+                          <div className="bg-muted/30 border border-border rounded-[32px] p-8 flex items-center justify-between">
+                             <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-[24px] bg-white border border-border flex items-center justify-center text-primary text-2xl font-black shadow-sm">ZI</div>
+                                <div>
+                                   <h3 className="text-xl font-black text-foreground uppercase">Zayd Ibrahim</h3>
+                                   <p className="text-[13px] font-bold text-muted-foreground">Student ID: #ST-8821 • Course: Tajweed</p>
+                                   <div className="flex items-center gap-2 mt-2">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Student Present</span>
+                                   </div>
+                                </div>
+                             </div>
+                             <div className="flex flex-col items-end gap-1">
+                                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Target Progress</div>
+                                <div className="text-2xl font-black text-primary">78%</div>
+                             </div>
+                          </div>
+
+                          {!attendance.marked ? (
+                             <div className="flex flex-col md:flex-row items-center gap-4">
+                                <button 
+                                  onClick={() => {
+                                      const now = new Date();
+                                      setAttendance({
+                                        marked: true,
+                                        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                      });
+                                  }}
+                                  disabled={classStatus !== "Live"}
+                                  className={cn(
+                                    "h-16 px-10 rounded-3xl text-[14px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3",
+                                    classStatus === "Live" ? "bg-primary text-white shadow-primary/20 hover:scale-105" : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                                  )}
+                                >
+                                   <PlayCircle size={24} /> Start Zoom Session & Verify Presence
+                                </button>
+                                <p className="text-[11px] font-bold text-muted-foreground max-w-[200px]">By starting the session, your attendance is automatically logged with HOD Compliance.</p>
+                             </div>
+                          ) : (
+                             <motion.div 
+                              initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+                              className="flex flex-col md:flex-row items-center gap-6"
+                             >
+                                <div className="flex-1 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl flex items-center gap-4">
+                                   <CheckCircle2 size={24} className="text-emerald-500" />
+                                   <div>
+                                      <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Verified Start</div>
+                                      <div className="text-[14px] font-black">{attendance.time}</div>
+                                   </div>
+                                </div>
+                                <button className="h-16 px-12 bg-primary text-white rounded-3xl text-[14px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95 flex-1">
+                                   <PlayCircle size={24} /> Re-join Zoom Session
+                                </button>
+                             </motion.div>
+                          )}
+                       </div>
+
+                       <div className="p-10 md:p-12 bg-muted/20 flex flex-col justify-between space-y-10">
+                          <div>
+                             <h4 className="text-[13px] font-black text-muted-foreground uppercase tracking-widest mb-4">Lesson Objective</h4>
+                             <div className="p-6 bg-card border border-border rounded-3xl space-y-3">
+                                <p className="text-[14px] font-bold text-foreground leading-relaxed">Revision of Al-Ikhlas with focus on Qalqalah rules at the end of verses.</p>
+                                <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                   <div className="h-full bg-primary w-2/3" />
+                                </div>
+                             </div>
+                          </div>
+
+                          <div className="space-y-4">
+                             <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                <span>Session Compliance</span>
+                                <ShieldCheck size={18} className="text-emerald-500" />
+                             </div>
+                             <div className="p-5 bg-white/50 border border-border rounded-2xl">
+                                <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">
+                                   This session is being monitored by the **Scheduler Cockpit**. Ensure you join within 2 minutes of marking present to avoid an HOD audit.
+                                </p>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "Workstation Analytics" && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                  className="space-y-10"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    {/* Date Picker Header */}
+                    <div className="lg:col-span-4 bg-card border border-border p-8 rounded-[40px] flex items-center justify-between shadow-2xl shadow-primary/5">
+                      <div>
+                        <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Performance Audit</h2>
+                        <p className="text-[13px] font-bold text-muted-foreground">Review session history and operational efficiency.</p>
+                      </div>
+                      <div className="flex items-center gap-4 bg-muted/50 p-2 rounded-2xl border border-border">
+                         <div className="flex items-center gap-3 px-4">
+                           <Calendar size={18} className="text-primary" />
+                           <input 
+                             type="date" 
+                             value={selectedAuditDate}
+                             onChange={(e) => setSelectedAuditDate(e.target.value)}
+                             className="bg-transparent text-[14px] font-black outline-none border-none cursor-pointer"
+                           />
+                         </div>
+                         <button className="h-12 px-6 bg-primary text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all">Audit Date</button>
+                      </div>
+                    </div>
+
+                    {/* Stats Blocks */}
+                    <div className="bg-card border border-border p-8 rounded-[40px] space-y-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                        <CheckCircle2 size={24} />
+                      </div>
+                      <div>
+                        <div className="text-4xl font-black text-foreground">{stats.today}</div>
+                        <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Classes Today</div>
+                      </div>
+                    </div>
+                    <div className="bg-card border border-border p-8 rounded-[40px] space-y-4">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                        <TrendingUp size={24} />
+                      </div>
+                      <div>
+                        <div className="text-4xl font-black text-foreground">{stats.week}</div>
+                        <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">This Week</div>
+                      </div>
+                    </div>
+                    <div className="bg-card border border-border p-8 rounded-[40px] space-y-4">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <Clock size={24} />
+                      </div>
+                      <div>
+                        <div className="text-4xl font-black text-destructive">{stats.lateStarts}</div>
+                        <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Late Starts (Audit)</div>
+                      </div>
+                    </div>
+                    <div className="bg-secondary p-8 rounded-[40px] text-white flex flex-col justify-between shadow-2xl shadow-primary/20">
+                      <h3 className="text-lg font-black uppercase tracking-tight">Month Total</h3>
+                      <div className="text-5xl font-black">{stats.month}</div>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Verified Sessions</p>
+                    </div>
+
+                    {/* Cancellation Breakdown */}
+                    <div className="lg:col-span-4 bg-card border border-border rounded-[40px] p-10 overflow-hidden shadow-2xl shadow-primary/5">
+                      <div className="flex items-center justify-between mb-10">
+                         <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Cancellation Ledger</h3>
+                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Detailed Audit Filtered by Date</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                         <div className="p-8 rounded-3xl bg-destructive/5 border border-destructive/10 space-y-2">
+                            <div className="text-[10px] font-black text-destructive uppercase tracking-widest">Teacher Unavailability</div>
+                            <div className="text-3xl font-black text-foreground">{stats.cancelled.teacher} Class</div>
+                            <p className="text-[11px] font-bold text-muted-foreground italic">"Power outage logged in Lahore"</p>
+                         </div>
+                         <div className="p-8 rounded-3xl bg-amber-500/5 border border-amber-500/10 space-y-2">
+                            <div className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Student Denied/Absent</div>
+                            <div className="text-3xl font-black text-foreground">{stats.cancelled.student} Classes</div>
+                            <p className="text-[11px] font-bold text-muted-foreground italic">"Guardian denied due to guest visit"</p>
+                         </div>
+                         <div className="p-8 rounded-3xl bg-muted/50 border border-border space-y-2">
+                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Predictive Schedule</div>
+                            <div className="text-lg font-black text-foreground">Tomorrow: 8 Classes</div>
+                            <div className="text-lg font-black text-foreground">Day After: 7 Classes</div>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "Secure Chat" && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+                  className="bg-card border border-border rounded-[48px] overflow-hidden shadow-2xl h-[700px] flex flex-col"
+                >
+                  <div className="p-8 bg-primary/5 border-b border-border flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black">ZI</div>
+                      <div>
+                        <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Zayd Ibrahim</h3>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                           <ShieldCheck size={12} /> Encrypted & Audited
                         </div>
                       </div>
-                    ))}
-                 </div>
-                 <button className="w-full py-2.5 rounded-lg border border-border text-[11px] font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all">Go to Messenger</button>
-              </div>
+                    </div>
+                    <div className="px-5 py-2 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest animate-pulse">
+                       Strict Text Only Mode
+                    </div>
+                  </div>
 
+                  <div className="flex-1 p-10 overflow-y-auto space-y-6 bg-muted/10 custom-scrollbar">
+                     <div className="max-w-[80%] bg-white border border-border p-5 rounded-2xl rounded-bl-none shadow-sm">
+                        <p className="text-[14px] font-bold text-foreground">Assalam o Alaikum Ustadh, I have revised the Qalqalah rules.</p>
+                        <span className="text-[9px] font-black text-muted-foreground uppercase mt-2 block">Student • 10:42 AM</span>
+                     </div>
+                     <div className="max-w-[80%] ml-auto bg-primary text-white p-5 rounded-2xl rounded-br-none shadow-lg shadow-primary/20">
+                        <p className="text-[14px] font-black">Walikum Assalam Zayd. Great! We will start the practice session in 10 minutes.</p>
+                        <span className="text-[9px] font-black opacity-60 uppercase mt-2 block text-right">You • 10:44 AM</span>
+                     </div>
+                  </div>
+
+                  <div className="p-8 bg-card border-t border-border">
+                    <div className="bg-primary/5 border border-primary/20 rounded-[24px] p-4 flex items-start gap-3 mb-4">
+                       <AlertCircle size={18} className="text-primary shrink-0" />
+                       <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">
+                         **Safety Protocol Active**: Contact sharing, document exchange, and external handles are strictly prohibited. All chats are reviewed by the **Lead HOD** for child safety compliance.
+                       </p>
+                    </div>
+                    <div className="relative flex items-center gap-4">
+                       <input 
+                         type="text" 
+                         placeholder="Type your message (Text only)..."
+                         className="flex-1 h-14 bg-muted/50 border border-border rounded-2xl px-6 text-[15px] font-bold focus:border-primary outline-none"
+                       />
+                       <button className="h-14 px-10 bg-primary text-white rounded-2xl text-[13px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+                          Send <ChevronRight size={18} />
+                       </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               <div className="bg-card border border-border p-8 rounded-[40px] shadow-xl shadow-primary/5 flex flex-col justify-between min-h-[200px]">
+                  <div className="flex items-center justify-between">
+                     <Users size={28} className="text-primary opacity-40" />
+                     <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-widest">Student Roster</span>
+                  </div>
+                  <div>
+                     <div className="text-4xl font-black text-foreground tracking-tighter">12 Active</div>
+                     <p className="text-[12px] font-bold text-muted-foreground mt-1">Students under your instruction</p>
+                  </div>
+               </div>
+               <div className="bg-card border border-border p-8 rounded-[40px] shadow-xl shadow-primary/5 flex flex-col justify-between min-h-[200px]">
+                  <div className="flex items-center justify-between">
+                     <BarChart2 size={28} className="text-emerald-500 opacity-40" />
+                     <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full uppercase tracking-widest">Performance</span>
+                  </div>
+                  <div>
+                     <div className="text-4xl font-black text-foreground tracking-tighter">Grade A</div>
+                     <p className="text-[12px] font-bold text-muted-foreground mt-1">Faculty quality rating by HOD</p>
+                  </div>
+               </div>
+               <div className="bg-primary p-8 rounded-[40px] text-white flex flex-col justify-between min-h-[200px] shadow-2xl shadow-primary/20 relative overflow-hidden group">
+                  <div className="absolute inset-0 opacity-10 pointer-events-none group-hover:rotate-12 transition-transform duration-700" 
+                       style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0l20 20-20 20L0 20z' fill='none' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E")` }} />
+                  <div className="relative z-10">
+                     <h3 className="text-2xl font-black uppercase tracking-tight">Shift Summary</h3>
+                     <p className="text-[13px] font-bold opacity-80 mt-1">Online • Evening Shift</p>
+                  </div>
+                  <button className="relative z-10 w-fit h-10 px-6 bg-white text-primary rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-white/90 transition-all">
+                     View Full Schedule
+                  </button>
+               </div>
             </div>
 
           </div>
-
         </main>
       </div>
+
+      {/* HOD Report Modal */}
+      <AnimatePresence>
+        {reportModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/80 backdrop-blur-md"
+              onClick={() => setReportModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative w-full max-w-xl bg-card border border-border rounded-[40px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 bg-destructive/10 border-b border-border flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-destructive/20 flex items-center justify-center text-destructive">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-foreground uppercase tracking-tight">File Report to HOD</h3>
+                  <p className="text-[13px] font-bold text-muted-foreground">Send a compliance or student issue report.</p>
+                </div>
+              </div>
+              <div className="p-10 space-y-8">
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Report Category</label>
+                   <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                      <option>Student Behavioral Issue</option>
+                      <option>Technical/Internet Problem</option>
+                      <option>Unexplained Student Absence</option>
+                      <option>Other Compliance Concern</option>
+                   </select>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Observation Details</label>
+                   <textarea 
+                     placeholder="Provide details for the HOD..."
+                     className="w-full h-40 bg-muted/50 border border-border rounded-3xl p-5 text-[15px] font-bold focus:border-primary outline-none transition-all resize-none"
+                   />
+                </div>
+                <div className="flex gap-4">
+                   <button onClick={() => setReportModalOpen(false)} className="flex-1 h-14 bg-muted border border-border rounded-2xl text-[14px] font-black uppercase tracking-widest">Cancel</button>
+                   <button 
+                     onClick={() => { setReportModalOpen(false); }}
+                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all"
+                   >
+                     Submit to HOD
+                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* HR Administrative Request Modal */}
+      <AnimatePresence>
+        {activeTab === "Requests" && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/80 backdrop-blur-md"
+              onClick={() => setActiveTab("Command Center")}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="relative w-full max-w-2xl bg-card border border-border rounded-[40px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 bg-primary/10 border-b border-border flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Administrative Request Desk</h3>
+                  <p className="text-[13px] font-bold text-muted-foreground">Official portal for Leaves & Salary issues.</p>
+                </div>
+              </div>
+              
+              <div className="p-10 space-y-6">
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex gap-3">
+                   <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                   <p className="text-[11px] font-bold text-amber-700 leading-relaxed uppercase tracking-tight">
+                     Strict Compliance: This is the only authorized channel for HR requests. External WhatsApp/Calls regarding salary or leave will not be acknowledged.
+                   </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Request Type</label>
+                      <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                         <option>Leave Request</option>
+                         <option>Salary Dispute / Query</option>
+                         <option>Advance Salary Request</option>
+                      </select>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Urgency</label>
+                      <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                         <option>Normal</option>
+                         <option>Urgent</option>
+                         <option>Critical</option>
+                      </select>
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Detailed Justification</label>
+                   <textarea 
+                     placeholder="Provide clear reasons and dates for your request..."
+                     className="w-full h-32 bg-muted/50 border border-border rounded-3xl p-5 text-[15px] font-bold focus:border-primary outline-none transition-all resize-none"
+                   />
+                </div>
+
+                <div className="flex gap-4">
+                   <button onClick={() => setActiveTab("Command Center")} className="flex-1 h-14 bg-muted border border-border rounded-2xl text-[14px] font-black uppercase tracking-widest">Discard</button>
+                   <button 
+                     onClick={() => setActiveTab("Command Center")}
+                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                   >
+                     Submit Official Request <ChevronRight size={18} />
+                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

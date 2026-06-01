@@ -2,18 +2,14 @@
 
 import React, { useState } from "react";
 import { 
-  Users, 
-  BookOpen, 
-  CalendarOff, 
-  Briefcase, 
-  TrendingUp, 
-  BarChart2, 
-  CalendarClock, 
-  Calendar, 
-  Check,
-  X
+  Users, BookOpen, CalendarOff, Briefcase, TrendingUp, 
+  BarChart2, CalendarClock, Calendar, Check, X,
+  DollarSign, GraduationCap, ShieldCheck, Search,
+  Filter, MoreHorizontal, ArrowUpRight, Clock,
+  AlertCircle, CheckCircle2, UserPlus, Eye
 } from "lucide-react";
 import { Sidebar, Navbar } from "@/components/dashboard-layout";
+import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -23,218 +19,232 @@ function cn(...inputs: ClassValue[]) {
 
 export default function HRDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Resolution Desk");
 
-  const summaryCards = [
-    {
-      title: "Total Staff",
-      value: "42",
-      icon: Users,
-      trend: "+3",
-      trendLabel: "Since last month",
-      trendColor: "text-emerald-500",
-      trendIcon: TrendingUp
-    },
-    {
-      title: "Active Teachers",
-      value: "28",
-      icon: BookOpen,
-      trendLabel: "Across 45 active classes",
-      trendColor: "text-muted-foreground",
-    },
-    {
-      title: "Staff On Leave",
-      value: "2",
-      icon: CalendarOff,
-      trendLabel: "Returning next week",
-      trendColor: "text-muted-foreground",
-    },
-    {
-      title: "Open Roles",
-      value: "3",
-      icon: Briefcase,
-      trendLabel: "Active recruitment",
-      trendColor: "text-primary font-bold",
-    }
+  const metrics = [
+    { label: "Total Recruiters", val: "42", trend: "+3", icon: Users, color: "text-primary" },
+    { label: "In Training", val: "08", trend: "High", icon: GraduationCap, color: "text-amber-500" },
+    { label: "On Payroll", val: "34", trend: "Stable", icon: DollarSign, color: "text-emerald-500" },
+    { label: "On Leave", val: "02", trend: "-1", icon: CalendarOff, color: "text-destructive" },
   ];
 
-  const attendanceData = [
-    { day: "15", value: 98 },
-    { day: "16", value: 95 },
-    { day: "17", value: 96 },
-    { day: "18", value: 92 },
-    { day: "19", value: 99 },
-    { day: "20", value: 94 },
-    { day: "21", value: 88 },
-    { day: "22", value: 97 },
-    { day: "23", value: 95 },
-    { day: "24", value: 93 },
+  const adminRequests = [
+    { id: "LR-9921", type: "Leave Request", author: "Ustadh Bilal", detail: "Emergency leave for family event in Lahore. Dates: 15-17 May.", urgency: "Normal", status: "Pending" },
+    { id: "SD-4402", type: "Salary Dispute", author: "Hafiz Usman", detail: "Query regarding overtime calculation for last Sunday's makeup sessions.", urgency: "Urgent", status: "Pending" },
+    { id: "AR-1192", type: "Advance Salary", author: "Sheikh Omar", detail: "Requesting 30% advance for medical expenses.", urgency: "Critical", status: "Pending" },
   ];
 
-  const leaveRequests = [
-    {
-      id: 1,
-      name: "Ustadh Bilal",
-      role: "Tajweed Instructor",
-      avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F25-35%2FMiddle%20Eastern%2F3",
-      dates: "Oct 25, 2023 — Oct 27, 2023 (3 Days)",
-      type: "Sick Leave:",
-      reason: "Down with severe flu and fever. Unable to conduct live voice sessions. Needs cover for Group A & Group C."
-    },
-    {
-      id: 2,
-      name: "Fatima Ali",
-      role: "Administrative Assistant",
-      avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F25-35%2FSouth%20Asian%2F4",
-      dates: "Nov 01, 2023 — Nov 05, 2023 (5 Days)",
-      type: "Annual Leave:",
-      reason: "Planned family trip out of the city. All pending administrative tasks are documented and handed over."
-    }
+  const staffDirectory = [
+    { name: "Ustadh Bilal", role: "Instructor", status: "On Payroll", joinDate: "2024-01-10", payrollDate: "2024-02-01", training: "3 Weeks", salary: "45,000" },
+    { name: "Hafiz Usman", role: "Instructor", status: "On Payroll", joinDate: "2024-03-05", payrollDate: "2024-03-25", training: "2 Weeks", salary: "38,000" },
+    { name: "Sara Ahmed", role: "Recruiter", status: "In Training", joinDate: "2024-05-01", payrollDate: "TBD", training: "Ongoing", salary: "25,000" },
+    { name: "Sheikh Omar", role: "Instructor", status: "On Payroll", joinDate: "2023-11-15", payrollDate: "2023-12-05", training: "3 Weeks", salary: "52,000" },
   ];
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
-      {/* Desktop Sidebar */}
       <Sidebar role="hr" className="hidden md:flex w-64 shrink-0" />
 
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-72 h-full animate-in slide-in-from-left duration-300">
-            <Sidebar role="hr" className="w-full" />
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-lg"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
         <Navbar 
-          title="HR Control Panel" 
+          title="HR Operations Center" 
           onMenuClick={() => setSidebarOpen(true)}
           userName="Yusuf Ahmed"
           userRole="HR Director"
-          userAvatar="https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F35-50%2FSouth%20Asian%2F2"
-          hideSearch
         />
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar">
-          
-          {/* ROW 1: Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {summaryCards.map((card, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-6 flex flex-col justify-between shadow-sm min-h-[140px] hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{card.title}</div>
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-foreground">
-                    <card.icon size={18} />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[34px] font-bold text-foreground leading-none tracking-tight mb-2">{card.value}</div>
-                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
-                    {card.trend && (
-                      <span className={cn("flex items-center gap-1", card.trendColor)}>
-                        {card.trendIcon && <card.trendIcon size={14} />}
-                        {card.trend}
-                      </span>
-                    )}
-                    <span className={!card.trend ? card.trendColor : ""}>{card.trendLabel}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ROW 2: Bar Chart */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-[15px] font-bold text-foreground flex items-center gap-2.5">
-                <BarChart2 size={16} className="text-primary" />
-                Staff Attendance Overview (Last 10 Days)
-              </div>
-              <div className="bg-muted px-2.5 py-1 rounded text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                Avg: 94%
-              </div>
-            </div>
-
-            <div className="flex-1 flex items-end justify-between px-2 sm:px-10 mt-6 min-h-[160px] h-[160px]">
-              {attendanceData.map((data, i) => (
-                <div key={i} className="flex flex-col items-center justify-end h-full w-8 sm:w-11 group">
-                  <div className="text-xs font-bold text-muted-foreground mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {data.value}%
-                  </div>
-                  <div className="w-full bg-muted rounded-t-md overflow-hidden h-[120px] relative">
-                    <div 
-                      className="absolute bottom-0 left-0 w-full bg-slate-800 rounded-t-sm transition-all duration-500 ease-out group-hover:bg-primary" 
-                      style={{ height: `${data.value}%` }} 
-                    />
-                  </div>
-                  <div className="text-xs font-bold text-muted-foreground mt-2.5">{data.day}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ROW 3: Leave Requests */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-[15px] font-bold text-foreground flex items-center gap-2.5">
-                <CalendarClock size={16} className="text-primary" />
-                Pending Leave Requests
-              </div>
-              <div className="bg-amber-500/10 text-amber-600 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide">
-                2 Action Required
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {leaveRequests.map((leave) => (
-                <div key={leave.id} className="border border-border rounded-xl p-5 flex flex-col bg-background hover:border-primary/30 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={leave.avatar} 
-                        alt={leave.name} 
-                        className="w-11 h-11 rounded-full object-cover bg-muted border-2 border-card"
-                      />
-                      <div>
-                        <div className="text-[15px] font-bold text-foreground leading-tight">{leave.name}</div>
-                        <div className="text-xs font-semibold text-muted-foreground mt-0.5">{leave.role}</div>
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 bg-muted/30">
+          <div className="max-w-[1600px] mx-auto space-y-10">
+            
+            {/* Executive Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {metrics.map((m, i) => (
+                <div key={i} className="bg-card border border-border p-6 rounded-[32px] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group">
+                   <div className="flex items-center justify-between mb-4">
+                      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center bg-muted transition-transform group-hover:scale-110", m.color)}>
+                         <m.icon size={24} />
                       </div>
-                    </div>
-                    <span className="bg-amber-500/10 text-amber-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide">Pending</span>
-                  </div>
-
-                  <div className="bg-card border border-border p-2.5 rounded-md text-[13px] font-bold text-foreground flex items-center gap-2 mb-3">
-                    <Calendar size={16} className="text-muted-foreground" />
-                    {leave.dates}
-                  </div>
-
-                  <div className="text-[13px] text-muted-foreground leading-relaxed font-medium mb-5 line-clamp-2 flex-1">
-                    <strong className="text-foreground mr-1">{leave.type}</strong>
-                    {leave.reason}
-                  </div>
-
-                  <div className="flex gap-3 mt-auto">
-                    <button className="flex-1 h-10 rounded-md border border-border text-foreground font-bold text-sm hover:bg-muted transition-all">
-                      Deny
-                    </button>
-                    <button className="flex-1 h-10 rounded-md bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-1.5 hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
-                      <Check size={16} />
-                      Approve Request
-                    </button>
-                  </div>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded-md">{m.trend}</span>
+                   </div>
+                   <div className="text-3xl font-black text-foreground">{m.val}</div>
+                   <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mt-1">{m.label}</div>
                 </div>
               ))}
             </div>
-          </div>
 
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+               
+               {/* Resolution Desk */}
+               <div className="xl:col-span-2 space-y-6">
+                  <div className="flex items-center justify-between">
+                     <h2 className="text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-3">
+                        <CalendarClock size={20} className="text-primary" /> Request Decision Hub
+                     </h2>
+                     <div className="flex items-center gap-2">
+                        <button className="h-10 px-4 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-muted transition-all">
+                           <Filter size={14} /> Filter
+                        </button>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {adminRequests.map((req, i) => (
+                        <div key={i} className="bg-card border border-border rounded-[32px] p-6 space-y-5 hover:border-primary transition-all relative overflow-hidden group">
+                           <div className={cn(
+                             "absolute top-0 right-0 w-1 h-full",
+                             req.urgency === "Critical" ? "bg-destructive" : req.urgency === "Urgent" ? "bg-amber-500" : "bg-primary"
+                           )} />
+                           <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{req.id}</span>
+                              <span className={cn(
+                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                                req.urgency === "Critical" ? "bg-destructive/10 border-destructive/20 text-destructive" :
+                                req.urgency === "Urgent" ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-primary/10 border-primary/20 text-primary"
+                              )}>{req.urgency}</span>
+                           </div>
+                           <div>
+                              <h4 className="text-[15px] font-black text-foreground uppercase tracking-tight">{req.type}</h4>
+                              <p className="text-[12px] font-bold text-muted-foreground mt-1">Request by: {req.author}</p>
+                           </div>
+                           <div className="p-4 bg-muted/50 rounded-2xl text-[13px] font-medium text-foreground leading-relaxed italic">
+                              "{req.detail}"
+                           </div>
+                           <div className="flex gap-3">
+                              <button className="flex-1 h-10 border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all">Reject</button>
+                              <button className="flex-1 h-10 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Approve</button>
+                           </div>
+                        </div>
+                     ))}
+                     <div className="bg-primary/5 border-2 border-dashed border-primary/20 rounded-[32px] flex flex-col items-center justify-center p-8 text-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                           <ShieldCheck size={32} />
+                        </div>
+                        <div>
+                           <p className="text-[14px] font-black text-foreground uppercase">Compliance Audit</p>
+                           <p className="text-[11px] font-bold text-muted-foreground mt-1">All decisions are logged & non-reversible</p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Recruiter Sidebar Summary */}
+               <div className="space-y-8">
+                  <div className="bg-card border border-border rounded-[40px] p-8 shadow-2xl shadow-primary/5 space-y-8">
+                     <h3 className="text-[15px] font-black text-foreground uppercase tracking-tight">Staffing Pulse</h3>
+                     
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                              <span className="text-muted-foreground">Training Progress</span>
+                              <span className="text-primary">8 Staff Members</span>
+                           </div>
+                           <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border">
+                              <div className="h-full bg-primary w-[40%]" />
+                           </div>
+                           <p className="text-[9px] font-bold text-muted-foreground italic">Avg. Training Duration: 2.4 Weeks</p>
+                        </div>
+
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                              <span className="text-muted-foreground">Payroll Capacity</span>
+                              <span className="text-emerald-500">34 Active</span>
+                           </div>
+                           <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border">
+                              <div className="h-full bg-emerald-500 w-[85%]" />
+                           </div>
+                           <p className="text-[9px] font-bold text-muted-foreground italic">Efficiency Rate: High</p>
+                        </div>
+                     </div>
+
+                     <button className="w-full h-14 bg-secondary text-white rounded-2xl text-[12px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 transition-all">
+                        <UserPlus size={18} /> New Recruitment
+                     </button>
+                  </div>
+
+                  <div className="bg-primary/5 border border-primary/20 rounded-[32px] p-6 flex gap-4">
+                     <AlertCircle size={24} className="text-primary shrink-0" />
+                     <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">
+                        **HR Alert**: 3 Teachers are approaching the end of their probationary period. Audit their classroom attendance to finalize payroll status.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Master Staff Directory Table */}
+               <div className="xl:col-span-3 bg-card border border-border rounded-[48px] overflow-hidden shadow-2xl shadow-primary/5">
+                  <div className="p-8 border-b border-border bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                     <div>
+                        <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Master Staff Directory</h3>
+                        <p className="text-[13px] font-bold text-muted-foreground">Audit recruitment lifecycle and financial data.</p>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <div className="relative">
+                           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                           <input type="text" placeholder="Search by name or role..." className="h-12 w-64 bg-background border border-border rounded-xl pl-12 pr-4 text-[13px] font-bold outline-none focus:border-primary transition-all" />
+                        </div>
+                     </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left border-collapse">
+                        <thead>
+                           <tr className="bg-muted/30">
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border">Recruiter Details</th>
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border">Status</th>
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border text-center">Dates (Join/Payroll)</th>
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border text-center">Training</th>
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border text-right">Salary (PKR)</th>
+                              <th className="p-6 text-[11px] font-black text-muted-foreground uppercase tracking-widest border-b border-border text-center">Actions</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                           {staffDirectory.map((staff, i) => (
+                              <tr key={i} className="hover:bg-muted/5 transition-colors group">
+                                 <td className="p-6">
+                                    <div className="flex items-center gap-4">
+                                       <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">{staff.name[0]}</div>
+                                       <div>
+                                          <div className="text-[14px] font-black text-foreground">{staff.name}</div>
+                                          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">{staff.role}</div>
+                                       </div>
+                                    </div>
+                                 </td>
+                                 <td className="p-6">
+                                    <span className={cn(
+                                       "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                                       staff.status === "On Payroll" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-amber-500/10 border-amber-500/20 text-amber-600"
+                                    )}>{staff.status}</span>
+                                 </td>
+                                 <td className="p-6 text-center">
+                                    <div className="text-[13px] font-bold text-foreground">{staff.joinDate}</div>
+                                    <div className="text-[11px] font-black text-muted-foreground uppercase">{staff.payrollDate}</div>
+                                 </td>
+                                 <td className="p-6 text-center">
+                                    <div className="inline-flex items-center gap-2 text-[12px] font-black text-primary bg-primary/5 px-3 py-1 rounded-lg">
+                                       <Clock size={14} /> {staff.training}
+                                    </div>
+                                 </td>
+                                 <td className="p-6 text-right font-black text-[15px] text-foreground tabular-nums">
+                                    {staff.salary}
+                                 </td>
+                                 <td className="p-6">
+                                    <div className="flex items-center justify-center gap-2">
+                                       <button className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-sm">
+                                          <Eye size={16} />
+                                       </button>
+                                       <button className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-sm">
+                                          <MoreHorizontal size={16} />
+                                       </button>
+                                    </div>
+                                 </td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+
+            </div>
+
+          </div>
         </main>
       </div>
     </div>
