@@ -44,7 +44,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Sidebar Component ---
-export function Sidebar({ className, role = "admin" }: { className?: string; role?: "admin" | "teacher" | "student" | "hr" | "scheduler" | "csr" | "hod" | "monitoring" }) {
+export function Sidebar({ className, role = "admin" }: { className?: string; role?: "admin" | "teacher" | "student" | "hr" | "scheduler" | "csr" | "hod" | "monitoring" | "director" }) {
   const pathname = usePathname();
 
   const adminMenuItems = [
