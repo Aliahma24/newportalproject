@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
+import {
   LayoutDashboard, 
   CalendarDays, 
   Users, 
@@ -31,7 +31,9 @@ import {
   AlertCircle,
   Check,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Globe,
+  Calendar
 } from "lucide-react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -44,7 +46,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Sidebar Component ---
-export function Sidebar({ className, role = "admin" }: { className?: string; role?: "admin" | "teacher" | "student" | "hr" | "scheduler" | "csr" | "hod" | "monitoring" | "director" }) {
+export function Sidebar({ className, role = "admin" }: { className?: string; role?: "admin" | "teacher" | "student" | "hr" | "scheduler" | "csr" | "hod" | "monitoring" | "director" | "manager" | "shift-manager" }) {
   const pathname = usePathname();
 
   const adminMenuItems = [
@@ -147,8 +149,44 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
     { icon: UserCog, label: "My Profile", href: "/dashboard/monitoring/profile", active: pathname === "/dashboard/monitoring/profile" },
   ];
 
-  const menuItems = role === "admin" ? adminMenuItems : role === "teacher" ? teacherMenuItems : role === "student" ? studentMenuItems : role === "hr" ? hrMenuItems : role === "csr" ? csrMenuItems : role === "hod" ? hodMenuItems : role === "monitoring" ? monitoringMenuItems : operationsMenuItems;
-  const settingItems = role === "admin" ? adminSettingItems : role === "teacher" ? teacherSettingItems : role === "student" ? studentSettingItems : role === "hr" ? hrSettingItems : role === "csr" ? csrSettingItems : role === "hod" ? adminSettingItems : operationsSettingItems;
+  const directorMenuItems = [
+    { icon: LayoutDashboard, label: "Executive Dashboard", href: "/dashboard/director", active: pathname === "/dashboard/director" },
+    { icon: TrendingUp, label: "Strategic Analytics", href: "/dashboard/director/analytics", active: pathname === "/dashboard/director/analytics" },
+    { icon: Users, label: "Institution Overview", href: "/dashboard/director/overview", active: pathname === "/dashboard/director/overview" },
+    { icon: BarChart2, label: "Financial Reports", href: "/dashboard/director/financial", active: pathname === "/dashboard/director/financial" },
+    { icon: Globe, label: "Regional Performance", href: "/dashboard/director/regions", active: pathname === "/dashboard/director/regions" },
+  ];
+
+  const directorSettingItems = [
+    { icon: Settings, label: "Executive Settings", href: "/dashboard/director/settings", active: pathname === "/dashboard/director/settings" },
+  ];
+
+  const managerMenuItems = [
+    { icon: LayoutDashboard, label: "Manager Dashboard", href: "/dashboard/manager", active: pathname === "/dashboard/manager" },
+    { icon: Users, label: "Center Operations", href: "/dashboard/manager/operations", active: pathname === "/dashboard/manager/operations" },
+    { icon: Clock, label: "Schedule Management", href: "/dashboard/manager/schedule", active: pathname === "/dashboard/manager/schedule" },
+    { icon: AlertTriangle, label: "Issues & Reports", href: "/dashboard/manager/issues", active: pathname === "/dashboard/manager/issues" },
+    { icon: BarChart2, label: "Performance Metrics", href: "/dashboard/manager/metrics", active: pathname === "/dashboard/manager/metrics" },
+  ];
+
+  const managerSettingItems = [
+    { icon: Settings, label: "Center Settings", href: "/dashboard/manager/settings", active: pathname === "/dashboard/manager/settings" },
+  ];
+
+  const shiftManagerMenuItems = [
+    { icon: LayoutDashboard, label: "Shift Dashboard", href: "/dashboard/shift-manager", active: pathname === "/dashboard/shift-manager" },
+    { icon: Clock, label: "Shift Schedules", href: "/dashboard/shift-manager/schedules", active: pathname === "/dashboard/shift-manager/schedules" },
+    { icon: Users, label: "Staff Availability", href: "/dashboard/shift-manager/staff", active: pathname === "/dashboard/shift-manager/staff" },
+    { icon: AlertTriangle, label: "Shift Issues", href: "/dashboard/shift-manager/issues", active: pathname === "/dashboard/shift-manager/issues" },
+    { icon: Calendar, label: "Swap Requests", href: "/dashboard/shift-manager/swaps", active: pathname === "/dashboard/shift-manager/swaps" },
+  ];
+
+  const shiftManagerSettingItems = [
+    { icon: Settings, label: "Shift Settings", href: "/dashboard/shift-manager/settings", active: pathname === "/dashboard/shift-manager/settings" },
+  ];
+
+  const menuItems = role === "admin" ? adminMenuItems : role === "teacher" ? teacherMenuItems : role === "student" ? studentMenuItems : role === "hr" ? hrMenuItems : role === "csr" ? csrMenuItems : role === "hod" ? hodMenuItems : role === "monitoring" ? monitoringMenuItems : role === "director" ? directorMenuItems : role === "manager" ? managerMenuItems : role === "shift-manager" ? shiftManagerMenuItems : operationsMenuItems;
+  const settingItems = role === "admin" ? adminSettingItems : role === "teacher" ? teacherSettingItems : role === "student" ? studentSettingItems : role === "hr" ? hrSettingItems : role === "csr" ? csrSettingItems : role === "hod" ? adminSettingItems : role === "monitoring" ? monitoringSettingItems : role === "director" ? directorSettingItems : role === "manager" ? managerSettingItems : role === "shift-manager" ? shiftManagerSettingItems : operationsSettingItems;
 
   const getMenuSectionLabel = () => {
     if (role === "hr") return "Human Resources";
@@ -156,6 +194,9 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
     if (role === "csr") return "Customer Service";
     if (role === "hod") return "Head of Department";
     if (role === "monitoring") return "Quality Assurance";
+    if (role === "director") return "Executive";
+    if (role === "manager") return "Management";
+    if (role === "shift-manager") return "Shift Management";
     return "Menu";
   };
 
