@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getManagerData } from "@/app/actions/analytics";
+import { escalateIssue } from "@/app/actions/admin";
 import { 
   Globe, Users, Clock, ShieldCheck, ArrowUpRight, 
   MapPin, AlertTriangle, CheckCircle2, Search, 
@@ -20,25 +22,25 @@ function cn(...inputs: ClassValue[]) {
 export default function ManagerDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeRegion, setActiveRegion] = useState("Global");
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      const res = await getManagerData();
+      if (res) setData(res);
+    }
+    loadData();
+  }, []);
 
   const globalMetrics = [
-    { label: "Total Students", val: "426", trend: "+12%", icon: Users },
-    { label: "Active Faculty", val: "58", trend: "Stable", icon: Briefcase },
-    { label: "Global Efficiency", val: "94.2%", trend: "+2.1%", icon: Activity },
-    { label: "Open Escalations", val: "05", trend: "Needs Action", icon: AlertTriangle },
+    { label: "Total Students", val: data?.metrics?.totalStudents || "0", trend: "+12%", icon: Users },
+    { label: "Active Faculty", val: data?.metrics?.activeFaculty || "0", trend: "Stable", icon: Briefcase },
+    { label: "Global Efficiency", val: data?.metrics?.globalEfficiency || "0%", trend: "+2.1%", icon: Activity },
+    { label: "Open Escalations", val: data?.metrics?.openEscalations || "0", trend: "Needs Action", icon: AlertTriangle },
   ];
 
-  const shiftManagers = [
-    { name: "Fatima Zahra", region: "United Kingdom", status: "On-Shift", efficiency: "92%", escalations: 2 },
-    { name: "John Doe", region: "United States", status: "Off-Shift", efficiency: "89%", escalations: 0 },
-    { name: "Hassan Malik", region: "UAE / Gulf", status: "On-Shift", efficiency: "95%", escalations: 3 },
-  ];
-
-  const regionalPerformance = [
-    { region: "UK", revenue: "42%", students: 184, growth: "+8%" },
-    { region: "USA", revenue: "38%", students: 156, growth: "+4%" },
-    { region: "Gulf", revenue: "20%", students: 86, growth: "+12%" },
-  ];
+  const shiftManagers = data?.shiftManagers || [];
+  const regionalPerformance = data?.regionalPerformance || [];
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -167,7 +169,15 @@ export default function ManagerDashboard() {
                         <div className="p-4 bg-destructive/5 border border-destructive/10 rounded-2xl">
                            <div className="text-[10px] font-black text-muted-foreground uppercase">UK Shift Alert</div>
                            <p className="text-[12px] font-bold text-foreground mt-1">"Mass internet outage in Lahore affecting 3 UK teachers."</p>
-                           <button className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 hover:underline">Deploy Backup</button>
+                           <button 
+                             onClick={async () => {
+                               const res = await escalateIssue("Backup Deployed", "Manager deployed backup for UK outage.");
+                               if (res.success) alert("Backup Deployed & Logged to System");
+                             }}
+                             className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 hover:underline"
+                           >
+                             Deploy Backup
+                           </button>
                         </div>
                      </div>
                   </div>

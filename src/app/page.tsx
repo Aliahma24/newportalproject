@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -173,6 +174,21 @@ export default function LoginPage() {
               {/* Action Buttons */}
               <div className="space-y-4 pt-1">
                 <button 
+                  onClick={async () => {
+                    setError(false);
+                    const res = await signIn('credentials', {
+                      email,
+                      password,
+                      redirect: false,
+                    });
+                    
+                    if (res?.error) {
+                      setError(true);
+                    } else {
+                      // Successful login will be handled by middleware redirection
+                      window.location.href = "/";
+                    }
+                  }}
                   className="w-full rounded-lg bg-primary py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
                 >
                   Log In

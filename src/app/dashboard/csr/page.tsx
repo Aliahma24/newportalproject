@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getCsrDashboardData } from "@/app/actions/csr";
+import { formatDistanceToNow } from "date-fns";
 import { 
   Users, 
   Clock, 
@@ -27,25 +29,28 @@ export default function CSRDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterCountry, setFilterCountry] = useState("All");
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
-  // Updated Mock Data with Country
-  const demos = [
-    { id: "DEM-001", student: "Zaid Ibrahim", guardian: "Ibrahim Khalil", submitted: "2 hours ago", status: "Pending", phone: "+92 300 1234567", country: "Pakistan" },
-    { id: "DEM-002", student: "Sara Ahmed", guardian: "Ahmed Malik", submitted: "5 hours ago", status: "Scheduled", phone: "+44 7700 900000", country: "United Kingdom" },
-    { id: "DEM-003", student: "Omar Farooq", guardian: "Farooq Aziz", submitted: "Yesterday", status: "Completed", phone: "+971 50 1234567", country: "United Arab Emirates" },
-    { id: "DEM-004", student: "Amira El-Sayed", guardian: "Mohamed El-Sayed", submitted: "Yesterday", status: "Cancelled", phone: "+1 202 555 0123", country: "United States" },
-    { id: "DEM-005", student: "Yousuf Khan", guardian: "Sajid Khan", submitted: "2 days ago", status: "Pending", phone: "+92 321 7654321", country: "Pakistan" },
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      const data = await getCsrDashboardData();
+      setDashboardData(data);
+    }
+    fetchData();
+  }, []);
+
+  const demos = dashboardData?.demos || [];
+  const stats = dashboardData?.stats || { totalRequests: 0, pendingScheduling: 0, demosToday: 0, conversionRate: 0 };
 
   const countries = ["All", "Pakistan", "United Kingdom", "United Arab Emirates", "United States", "Canada", "Australia"];
 
-  const filteredDemos = demos.filter(demo => {
-    const statusMatch = filterStatus === "All" || demo.status === filterStatus;
+  const filteredDemos = demos.filter((demo: any) => {
+    const statusMatch = filterStatus === "All" || demo.status.toLowerCase() === filterStatus.toLowerCase();
     const countryMatch = filterCountry === "All" || demo.country === filterCountry;
     return statusMatch && countryMatch;
   });
 
-  const pendingCount = demos.filter(d => d.status === "Pending").length;
+  const pendingCount = stats.pendingScheduling;
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -57,10 +62,10 @@ export default function CSRDashboard() {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[
-              { label: "Total Requests", value: "124", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+              { label: "Total Requests", value: stats.totalRequests.toString(), icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
               { label: "Pending Scheduling", value: pendingCount.toString(), icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
-              { label: "Demos Today", value: "8", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-              { label: "Conversion Rate", value: "64%", icon: AlertCircle, color: "text-primary", bg: "bg-primary/10" },
+              { label: "Demos Today", value: stats.demosToday.toString(), icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+              { label: "Conversion Rate", value: `${stats.conversionRate}%`, icon: AlertCircle, color: "text-primary", bg: "bg-primary/10" },
             ].map((stat, i) => (
               <div key={i} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
@@ -163,15 +168,15 @@ export default function CSRDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredDemos.map((demo) => (
+                  {filteredDemos.map((demo: any) => (
                     <tr key={demo.id} className="hover:bg-muted/10 transition-colors group">
                       <td className="px-6 py-4">
-                        <div className="text-[13px] font-bold text-foreground">{demo.id}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">{demo.submitted}</div>
+                        <div className="text-[13px] font-bold text-foreground truncate w-24" title={demo.id}>{demo.id.split('-')[0]}...</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(demo.createdAt))} ago</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-[13px] font-bold text-foreground">{demo.student}</div>
-                        <div className="text-[12px] text-muted-foreground font-medium">{demo.guardian}</div>
+                        <div className="text-[13px] font-bold text-foreground">{demo.studentName}</div>
+                        <div className="text-[12px] text-muted-foreground font-medium">{demo.guardianName}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5 text-[12px] font-bold text-foreground">
@@ -185,10 +190,10 @@ export default function CSRDashboard() {
                       <td className="px-6 py-4">
                         <span className={cn(
                           "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                          demo.status === "Pending" && "bg-amber-100 text-amber-600",
-                          demo.status === "Scheduled" && "bg-blue-100 text-blue-600",
-                          demo.status === "Completed" && "bg-emerald-100 text-emerald-600",
-                          demo.status === "Cancelled" && "bg-red-100 text-red-600",
+                          demo.status === "PENDING" && "bg-amber-100 text-amber-600",
+                          demo.status === "SCHEDULED" && "bg-blue-100 text-blue-600",
+                          demo.status === "COMPLETED" && "bg-emerald-100 text-emerald-600",
+                          demo.status === "CANCELLED" && "bg-red-100 text-red-600",
                         )}>
                           {demo.status}
                         </span>

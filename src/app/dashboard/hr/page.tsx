@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getHrDashboardData, processLeaveRequest } from "@/app/actions/hr";
 import { 
   Users, BookOpen, CalendarOff, Briefcase, TrendingUp, 
   BarChart2, CalendarClock, Calendar, Check, X,
@@ -18,28 +20,31 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function HRDashboard() {
+  const { data: session } = useSession();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Resolution Desk");
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
-  const metrics = [
-    { label: "Total Recruiters", val: "42", trend: "+3", icon: Users, color: "text-primary" },
-    { label: "In Training", val: "08", trend: "High", icon: GraduationCap, color: "text-amber-500" },
-    { label: "On Payroll", val: "34", trend: "Stable", icon: DollarSign, color: "text-emerald-500" },
-    { label: "On Leave", val: "02", trend: "-1", icon: CalendarOff, color: "text-destructive" },
-  ];
+  const fetchData = async () => {
+    const data = await getHrDashboardData();
+    setDashboardData(data);
+  };
 
-  const adminRequests = [
-    { id: "LR-9921", type: "Leave Request", author: "Ustadh Bilal", detail: "Emergency leave for family event in Lahore. Dates: 15-17 May.", urgency: "Normal", status: "Pending" },
-    { id: "SD-4402", type: "Salary Dispute", author: "Hafiz Usman", detail: "Query regarding overtime calculation for last Sunday's makeup sessions.", urgency: "Urgent", status: "Pending" },
-    { id: "AR-1192", type: "Advance Salary", author: "Sheikh Omar", detail: "Requesting 30% advance for medical expenses.", urgency: "Critical", status: "Pending" },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const staffDirectory = [
-    { name: "Ustadh Bilal", role: "Instructor", status: "On Payroll", joinDate: "2024-01-10", payrollDate: "2024-02-01", training: "3 Weeks", salary: "45,000" },
-    { name: "Hafiz Usman", role: "Instructor", status: "On Payroll", joinDate: "2024-03-05", payrollDate: "2024-03-25", training: "2 Weeks", salary: "38,000" },
-    { name: "Sara Ahmed", role: "Recruiter", status: "In Training", joinDate: "2024-05-01", payrollDate: "TBD", training: "Ongoing", salary: "25,000" },
-    { name: "Sheikh Omar", role: "Instructor", status: "On Payroll", joinDate: "2023-11-15", payrollDate: "2023-12-05", training: "3 Weeks", salary: "52,000" },
-  ];
+  const handleProcess = async (id: string, status: "APPROVED" | "REJECTED") => {
+    await processLeaveRequest(id, status);
+    fetchData();
+  };
+
+  const metrics = dashboardData ? [
+    { label: "Total Staff", val: dashboardData.stats.totalStaff.toString(), trend: "+Active", icon: Users, color: "text-primary" },
+    { label: "In Training", val: "0", trend: "Normal", icon: GraduationCap, color: "text-amber-500" },
+    { label: "On Payroll", val: dashboardData.stats.totalStaff.toString(), trend: "Stable", icon: DollarSign, color: "text-emerald-500" },
+    { label: "Pending Requests", val: dashboardData.stats.pendingRequests.toString(), trend: "Action Req", icon: CalendarOff, color: "text-destructive" },
+  ] : [];
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -49,7 +54,7 @@ export default function HRDashboard() {
         <Navbar 
           title="HR Operations Center" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Yusuf Ahmed"
+          userName={session?.user?.name || "Yusuf Ahmed"}
           userRole="HR Director"
         />
 
@@ -88,33 +93,39 @@ export default function HRDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {adminRequests.map((req, i) => (
-                        <div key={i} className="bg-card border border-border rounded-[32px] p-6 space-y-5 hover:border-primary transition-all relative overflow-hidden group">
-                           <div className={cn(
-                             "absolute top-0 right-0 w-1 h-full",
-                             req.urgency === "Critical" ? "bg-destructive" : req.urgency === "Urgent" ? "bg-amber-500" : "bg-primary"
-                           )} />
-                           <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{req.id}</span>
-                              <span className={cn(
-                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                                req.urgency === "Critical" ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                                req.urgency === "Urgent" ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-primary/10 border-primary/20 text-primary"
-                              )}>{req.urgency}</span>
-                           </div>
-                           <div>
-                              <h4 className="text-[15px] font-black text-foreground uppercase tracking-tight">{req.type}</h4>
-                              <p className="text-[12px] font-bold text-muted-foreground mt-1">Request by: {req.author}</p>
-                           </div>
-                           <div className="p-4 bg-muted/50 rounded-2xl text-[13px] font-medium text-foreground leading-relaxed italic">
-                              "{req.detail}"
-                           </div>
-                           <div className="flex gap-3">
-                              <button className="flex-1 h-10 border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all">Reject</button>
-                              <button className="flex-1 h-10 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Approve</button>
-                           </div>
-                        </div>
-                     ))}
+                     {dashboardData?.leaveRequests?.map((req: any, i: number) => {
+                        const isCritical = req.reason.includes("Critical");
+                        const isUrgent = req.reason.includes("Urgent");
+                        return (
+                          <div key={i} className={cn("bg-card border border-border rounded-[32px] p-6 space-y-5 hover:border-primary transition-all relative overflow-hidden group", req.status !== "PENDING" && "opacity-50")}>
+                             <div className={cn(
+                               "absolute top-0 right-0 w-1 h-full",
+                               isCritical ? "bg-destructive" : isUrgent ? "bg-amber-500" : "bg-primary"
+                             )} />
+                             <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{req.status}</span>
+                                <span className={cn(
+                                  "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                                  isCritical ? "bg-destructive/10 border-destructive/20 text-destructive" :
+                                  isUrgent ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-primary/10 border-primary/20 text-primary"
+                                )}>{isCritical ? "Critical" : isUrgent ? "Urgent" : "Normal"}</span>
+                             </div>
+                             <div>
+                                <h4 className="text-[15px] font-black text-foreground uppercase tracking-tight">{req.leaveType}</h4>
+                                <p className="text-[12px] font-bold text-muted-foreground mt-1">Request by: {req.user?.name}</p>
+                             </div>
+                             <div className="p-4 bg-muted/50 rounded-2xl text-[13px] font-medium text-foreground leading-relaxed italic">
+                                "{req.reason}"
+                             </div>
+                             {req.status === "PENDING" && (
+                               <div className="flex gap-3">
+                                  <button onClick={() => handleProcess(req.id, "REJECTED")} className="flex-1 h-10 border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all">Reject</button>
+                                  <button onClick={() => handleProcess(req.id, "APPROVED")} className="flex-1 h-10 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Approve</button>
+                               </div>
+                             )}
+                          </div>
+                        );
+                     })}
                      <div className="bg-primary/5 border-2 border-dashed border-primary/20 rounded-[32px] flex flex-col items-center justify-center p-8 text-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                            <ShieldCheck size={32} />
@@ -196,7 +207,7 @@ export default function HRDashboard() {
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                           {staffDirectory.map((staff, i) => (
+                           {dashboardData?.staffDirectory?.map((staff: any, i: number) => (
                               <tr key={i} className="hover:bg-muted/5 transition-colors group">
                                  <td className="p-6">
                                     <div className="flex items-center gap-4">
@@ -208,22 +219,18 @@ export default function HRDashboard() {
                                     </div>
                                  </td>
                                  <td className="p-6">
-                                    <span className={cn(
-                                       "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                       staff.status === "On Payroll" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-amber-500/10 border-amber-500/20 text-amber-600"
-                                    )}>{staff.status}</span>
+                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border bg-emerald-500/10 border-emerald-500/20 text-emerald-600">On Payroll</span>
                                  </td>
                                  <td className="p-6 text-center">
-                                    <div className="text-[13px] font-bold text-foreground">{staff.joinDate}</div>
-                                    <div className="text-[11px] font-black text-muted-foreground uppercase">{staff.payrollDate}</div>
+                                    <div className="text-[13px] font-bold text-foreground">{new Date(staff.createdAt).toLocaleDateString()}</div>
                                  </td>
                                  <td className="p-6 text-center">
                                     <div className="inline-flex items-center gap-2 text-[12px] font-black text-primary bg-primary/5 px-3 py-1 rounded-lg">
-                                       <Clock size={14} /> {staff.training}
+                                       <Clock size={14} /> Completed
                                     </div>
                                  </td>
                                  <td className="p-6 text-right font-black text-[15px] text-foreground tabular-nums">
-                                    {staff.salary}
+                                    Standard
                                  </td>
                                  <td className="p-6">
                                     <div className="flex items-center justify-center gap-2">

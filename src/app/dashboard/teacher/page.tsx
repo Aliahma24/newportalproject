@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getTeacherDashboardData } from "@/app/actions/dashboard";
+import { markAttendance } from "@/app/actions/attendance";
+import { submitComplaint, submitLeaveRequest } from "@/app/actions/tickets";
 import { 
   Users, CheckCircle2, PlayCircle, Clock, 
   MessageSquare, AlertTriangle, BookOpen, 
@@ -17,34 +21,97 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function TeacherDashboard() {
+  const { data: session } = useSession();
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      getTeacherDashboardData(session.user.id).then(data => {
+        setDashboardData(data);
+        if (data.activeClass && data.attendances) {
+          const classAttendance = data.attendances.find((a: any) => a.classId === data.activeClass.id);
+          if (classAttendance) {
+            setAttendance({
+              marked: true,
+              time: new Date(classAttendance.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            });
+          }
+        }
+      });
+    }
+  }, [session]);
   
-  // Mock Class Data (e.g., Active 07:00 PM - 08:00 PM)
-  const classStartTime = new Date();
-  classStartTime.setHours(19, 0, 0); 
-  const classEndTime = new Date();
-  classEndTime.setHours(20, 0, 0);
+  const classStartTime = dashboardData?.activeClass ? new Date(dashboardData.activeClass.scheduledStart) : new Date(new Date().setHours(19, 0, 0));
+  const classEndTime = dashboardData?.activeClass ? new Date(dashboardData.activeClass.scheduledEnd) : new Date(new Date().setHours(20, 0, 0));
 
   const [attendance, setAttendance] = useState<{ marked: boolean; time: string | null }>({
     marked: false,
     time: null
   });
 
-  const [classStatus, setClassStatus] = useState<"Locked" | "Live" | "Ended">("Locked");
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Command Center");
   const [selectedAuditDate, setSelectedAuditDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Analytics Mock Data
-  const stats = {
-    today: 6,
-    week: 34,
-    month: 128,
-    lateStarts: 2,
+  // Form States
+  const [reportCategory, setReportCategory] = useState("Student Behavioral Issue");
+  const [reportDetails, setReportDetails] = useState("");
+  const [isReporting, setIsReporting] = useState(false);
+
+  const [hrRequestType, setHrRequestType] = useState("Leave Request");
+  const [hrUrgency, setHrUrgency] = useState("Normal");
+  const [hrJustification, setHrJustification] = useState("");
+  const [isSubmittingHr, setIsSubmittingHr] = useState(false);
+
+  const handleReportSubmit = async () => {
+    if (!session?.user?.id || !reportDetails.trim()) return;
+    setIsReporting(true);
+    const res = await submitComplaint({
+      submitterId: session.user.id,
+      category: reportCategory,
+      details: reportDetails
+    });
+    setIsReporting(false);
+    if (res.success) {
+      setReportModalOpen(false);
+      setReportDetails("");
+      alert("Report submitted to HOD successfully.");
+    } else {
+      alert("Failed to submit report.");
+    }
+  };
+
+  const handleHrSubmit = async () => {
+    if (!session?.user?.id || !hrJustification.trim()) return;
+    setIsSubmittingHr(true);
+    const res = await submitLeaveRequest({
+      userId: session.user.id,
+      requestType: hrRequestType,
+      urgency: hrUrgency,
+      justification: hrJustification
+    });
+    setIsSubmittingHr(false);
+    if (res.success) {
+      setActiveTab("Command Center");
+      setHrJustification("");
+      alert("HR Request submitted successfully.");
+    } else {
+      alert("Failed to submit request.");
+    }
+  };
+
+  const stats = dashboardData?.stats || {
+    today: 0,
+    week: 0,
+    month: 0,
+    lateStarts: 0,
     cancelled: {
-      teacher: 1,
-      student: 3,
+      teacher: 0,
+      student: 0,
       technical: 0
     }
   };
@@ -68,7 +135,7 @@ export default function TeacherDashboard() {
         <Navbar 
           title="Teacher Command Center" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Ustadh Bilal"
+          userName={session?.user?.name || "Loading..."}
           userRole="Senior Instructor"
         />
 
@@ -104,7 +171,7 @@ export default function TeacherDashboard() {
                         <Star size={32} />
                       </div>
                       <div>
-                         <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, Ustadh Bilal</h1>
+                         <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, {session?.user?.name || 'Instructor'}</h1>
                          <div className="flex items-center gap-3 mt-1">
                             <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md uppercase tracking-widest">Grade A Faculty</span>
                             <span className="text-[12px] font-bold text-muted-foreground">Verified Premium Account</span>
@@ -141,16 +208,24 @@ export default function TeacherDashboard() {
                              </div>
                              <div>
                                 <div className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Current Active Slot</div>
-                                <div className="text-2xl font-black text-foreground uppercase tracking-tight">07:00 PM - 08:00 PM Session</div>
+                                <div className="text-2xl font-black text-foreground uppercase tracking-tight">
+                                   {dashboardData?.activeClass ? dashboardData.activeClass.title : 'No Active Session'}
+                                </div>
                              </div>
                           </div>
 
                           <div className="bg-muted/30 border border-border rounded-[32px] p-8 flex items-center justify-between">
                              <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 rounded-[24px] bg-white border border-border flex items-center justify-center text-primary text-2xl font-black shadow-sm">ZI</div>
-                                <div>
-                                   <h3 className="text-xl font-black text-foreground uppercase">Zayd Ibrahim</h3>
-                                   <p className="text-[13px] font-bold text-muted-foreground">Student ID: #ST-8821 • Course: Tajweed</p>
+                                 <div className="w-16 h-16 rounded-[24px] bg-white border border-border flex items-center justify-center text-primary text-2xl font-black shadow-sm">
+                                    {dashboardData?.activeClass?.student?.name ? dashboardData.activeClass.student.name.substring(0,2).toUpperCase() : 'ST'}
+                                 </div>
+                                 <div>
+                                    <h3 className="text-xl font-black text-foreground uppercase">
+                                       {dashboardData?.activeClass?.student?.name || 'No Student'}
+                                    </h3>
+                                    <p className="text-[13px] font-bold text-muted-foreground">
+                                       Student ID: {dashboardData?.activeClass?.studentId?.substring(0,8) || 'N/A'} • Course: {dashboardData?.activeClass?.title || 'N/A'}
+                                    </p>
                                    <div className="flex items-center gap-2 mt-2">
                                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                                       <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Student Present</span>
@@ -166,20 +241,25 @@ export default function TeacherDashboard() {
                           {!attendance.marked ? (
                              <div className="flex flex-col md:flex-row items-center gap-4">
                                 <button 
-                                  onClick={() => {
-                                      const now = new Date();
-                                      setAttendance({
-                                        marked: true,
-                                        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                                      });
+                                  onClick={async () => {
+                                      if (!session?.user?.id || !dashboardData?.activeClass?.id) return;
+                                      setIsLoading(true);
+                                      const res = await markAttendance(session.user.id, dashboardData.activeClass.id, "TEACHER");
+                                      setIsLoading(false);
+                                      if (res.success && res.attendance) {
+                                        setAttendance({
+                                          marked: true,
+                                          time: new Date(res.attendance.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                        });
+                                      }
                                   }}
-                                  disabled={classStatus !== "Live"}
+                                  disabled={classStatus !== "Live" || isLoading}
                                   className={cn(
                                     "h-16 px-10 rounded-3xl text-[14px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3",
-                                    classStatus === "Live" ? "bg-primary text-white shadow-primary/20 hover:scale-105" : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                                    classStatus === "Live" && !isLoading ? "bg-primary text-white shadow-primary/20 hover:scale-105" : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
                                   )}
                                 >
-                                   <PlayCircle size={24} /> Start Zoom Session & Verify Presence
+                                   <PlayCircle size={24} /> {isLoading ? "Starting Session..." : "Start Zoom Session & Verify Presence"}
                                 </button>
                                 <p className="text-[11px] font-bold text-muted-foreground max-w-[200px]">By starting the session, your attendance is automatically logged with HOD Compliance.</p>
                              </div>
@@ -204,9 +284,11 @@ export default function TeacherDashboard() {
 
                        <div className="p-10 md:p-12 bg-muted/20 flex flex-col justify-between space-y-10">
                           <div>
-                             <h4 className="text-[13px] font-black text-muted-foreground uppercase tracking-widest mb-4">Lesson Objective</h4>
-                             <div className="p-6 bg-card border border-border rounded-3xl space-y-3">
-                                <p className="text-[14px] font-bold text-foreground leading-relaxed">Revision of Al-Ikhlas with focus on Qalqalah rules at the end of verses.</p>
+                              <h4 className="text-[13px] font-black text-muted-foreground uppercase tracking-widest mb-4">Lesson Objective</h4>
+                              <div className="p-6 bg-card border border-border rounded-3xl space-y-3">
+                                 <p className="text-[14px] font-bold text-foreground leading-relaxed">
+                                   {dashboardData?.activeClass?.description || 'No class scheduled for now.'}
+                                 </p>
                                 <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                                    <div className="h-full bg-primary w-2/3" />
                                 </div>
@@ -262,7 +344,7 @@ export default function TeacherDashboard() {
                         <CheckCircle2 size={24} />
                       </div>
                       <div>
-                        <div className="text-4xl font-black text-foreground">{stats.today}</div>
+                        <div className="text-4xl font-black text-foreground">{stats.todayCount || stats.today}</div>
                         <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Classes Today</div>
                       </div>
                     </div>
@@ -271,7 +353,7 @@ export default function TeacherDashboard() {
                         <TrendingUp size={24} />
                       </div>
                       <div>
-                        <div className="text-4xl font-black text-foreground">{stats.week}</div>
+                        <div className="text-4xl font-black text-foreground">{stats.weekCount || stats.week}</div>
                         <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">This Week</div>
                       </div>
                     </div>
@@ -286,7 +368,7 @@ export default function TeacherDashboard() {
                     </div>
                     <div className="bg-secondary p-8 rounded-[40px] text-white flex flex-col justify-between shadow-2xl shadow-primary/20">
                       <h3 className="text-lg font-black uppercase tracking-tight">Month Total</h3>
-                      <div className="text-5xl font-black">{stats.month}</div>
+                      <div className="text-5xl font-black">{stats.monthCount || stats.month}</div>
                       <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Verified Sessions</p>
                     </div>
 
@@ -379,7 +461,7 @@ export default function TeacherDashboard() {
                      <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-widest">Student Roster</span>
                   </div>
                   <div>
-                     <div className="text-4xl font-black text-foreground tracking-tighter">12 Active</div>
+                     <div className="text-4xl font-black text-foreground tracking-tighter">{stats.studentsCount || 0} Active</div>
                      <p className="text-[12px] font-bold text-muted-foreground mt-1">Students under your instruction</p>
                   </div>
                </div>
@@ -436,7 +518,11 @@ export default function TeacherDashboard() {
               <div className="p-10 space-y-8">
                 <div className="space-y-2">
                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Report Category</label>
-                   <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                   <select 
+                     value={reportCategory}
+                     onChange={(e) => setReportCategory(e.target.value)}
+                     className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none"
+                   >
                       <option>Student Behavioral Issue</option>
                       <option>Technical/Internet Problem</option>
                       <option>Unexplained Student Absence</option>
@@ -446,6 +532,8 @@ export default function TeacherDashboard() {
                 <div className="space-y-2">
                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Observation Details</label>
                    <textarea 
+                     value={reportDetails}
+                     onChange={(e) => setReportDetails(e.target.value)}
                      placeholder="Provide details for the HOD..."
                      className="w-full h-40 bg-muted/50 border border-border rounded-3xl p-5 text-[15px] font-bold focus:border-primary outline-none transition-all resize-none"
                    />
@@ -453,10 +541,11 @@ export default function TeacherDashboard() {
                 <div className="flex gap-4">
                    <button onClick={() => setReportModalOpen(false)} className="flex-1 h-14 bg-muted border border-border rounded-2xl text-[14px] font-black uppercase tracking-widest">Cancel</button>
                    <button 
-                     onClick={() => { setReportModalOpen(false); }}
-                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all"
+                     disabled={isReporting || !reportDetails.trim()}
+                     onClick={handleReportSubmit}
+                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
                    >
-                     Submit to HOD
+                     {isReporting ? "Submitting..." : "Submit to HOD"}
                    </button>
                 </div>
               </div>
@@ -500,7 +589,11 @@ export default function TeacherDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
                       <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Request Type</label>
-                      <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                      <select 
+                        value={hrRequestType}
+                        onChange={(e) => setHrRequestType(e.target.value)}
+                        className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none"
+                      >
                          <option>Leave Request</option>
                          <option>Salary Dispute / Query</option>
                          <option>Advance Salary Request</option>
@@ -508,7 +601,11 @@ export default function TeacherDashboard() {
                    </div>
                    <div className="space-y-2">
                       <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Urgency</label>
-                      <select className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none">
+                      <select 
+                        value={hrUrgency}
+                        onChange={(e) => setHrUrgency(e.target.value)}
+                        className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold focus:border-primary outline-none"
+                      >
                          <option>Normal</option>
                          <option>Urgent</option>
                          <option>Critical</option>
@@ -519,6 +616,8 @@ export default function TeacherDashboard() {
                 <div className="space-y-2">
                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Detailed Justification</label>
                    <textarea 
+                     value={hrJustification}
+                     onChange={(e) => setHrJustification(e.target.value)}
                      placeholder="Provide clear reasons and dates for your request..."
                      className="w-full h-32 bg-muted/50 border border-border rounded-3xl p-5 text-[15px] font-bold focus:border-primary outline-none transition-all resize-none"
                    />
@@ -527,10 +626,11 @@ export default function TeacherDashboard() {
                 <div className="flex gap-4">
                    <button onClick={() => setActiveTab("Command Center")} className="flex-1 h-14 bg-muted border border-border rounded-2xl text-[14px] font-black uppercase tracking-widest">Discard</button>
                    <button 
-                     onClick={() => setActiveTab("Command Center")}
-                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                     disabled={isSubmittingHr || !hrJustification.trim()}
+                     onClick={handleHrSubmit}
+                     className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                    >
-                     Submit Official Request <ChevronRight size={18} />
+                     {isSubmittingHr ? "Submitting..." : "Submit Official Request"} <ChevronRight size={18} />
                    </button>
                 </div>
               </div>

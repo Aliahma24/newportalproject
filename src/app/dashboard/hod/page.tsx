@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getHodDashboardData, resolveComplaint } from "@/app/actions/hod";
 import {
   LayoutDashboard, Users, GraduationCap, AlertTriangle, BookOpen,
   BarChart2, TrendingUp, TrendingDown, Star, CheckCircle2, Clock,
@@ -20,10 +22,10 @@ function cn(...inputs: ClassValue[]) {
 // Complaint Feed Item Component
 function ComplaintCard({ id, source, author, target, issue, status, timestamp }: any) {
   return (
-    <div className="group bg-card border border-border rounded-3xl p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 relative overflow-hidden">
+    <div className={cn("group bg-card border border-border rounded-3xl p-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 relative overflow-hidden", status === "RESOLVED" && "opacity-50")}>
       <div className={cn(
         "absolute top-0 right-0 w-1 h-full",
-        status === "Pending" ? "bg-amber-500" : "bg-emerald-500"
+        status === "PENDING" ? "bg-amber-500" : "bg-emerald-500"
       )} />
       
       <div className="flex items-center justify-between mb-4">
@@ -45,7 +47,7 @@ function ComplaintCard({ id, source, author, target, issue, status, timestamp }:
         </div>
         <div className={cn(
           "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-          status === "Pending" ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+          status === "PENDING" ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
         )}>
           {status}
         </div>
@@ -63,10 +65,14 @@ function ComplaintCard({ id, source, author, target, issue, status, timestamp }:
       <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
         <span className="text-[10px] font-bold text-muted-foreground">{timestamp}</span>
         <div className="flex gap-2">
-          <button className="h-8 px-4 bg-muted border border-border rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-border transition-all">View Detail</button>
-          <button className="h-8 px-4 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-1">
-            <CheckCircle size={12} /> Resolve
-          </button>
+          {status === "PENDING" && (
+            <button 
+              onClick={() => id.onResolve && id.onResolve(id.rawId)}
+              className="h-8 px-4 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-1"
+            >
+              <CheckCircle size={12} /> Resolve
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -74,22 +80,32 @@ function ComplaintCard({ id, source, author, target, issue, status, timestamp }:
 }
 
 export default function HODDashboard() {
+  const { data: session } = useSession();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Resolution Feed");
   const [supervisorMode, setSupervisorMode] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
-  const stats = [
-    { label: "Faculty Size", val: "24", trend: "+2", icon: Users },
-    { label: "Resolution Rate", val: "94%", trend: "+5.2%", icon: CheckCircle2 },
-    { label: "Active Audits", val: "12", trend: "Normal", icon: ShieldCheck },
-    { label: "Open Complaints", val: "08", trend: "High", icon: AlertTriangle },
-  ];
+  const fetchData = async () => {
+    const data = await getHodDashboardData();
+    setDashboardData(data);
+  };
 
-  const complaints = [
-    { id: "AUD-8821", source: "Scheduler", author: "Ahmed Khan", target: "Ustadh Bilal", issue: "Behavioral Observation: Teacher was not using the prescribed Tajweed software.", status: "Pending", timestamp: "24 mins ago" },
-    { id: "REP-4402", source: "Teacher", author: "Hafiz Usman", target: "Zayd Ibrahim", issue: "Student repeatedly failing to join on time despite 3 call attempts.", status: "Pending", timestamp: "1 hour ago" },
-    { id: "FBK-1192", source: "Parent", author: "Sarah's Father", target: "Sheikh Omar", issue: "Internet connection on teacher's end was unstable for the first 10 mins.", status: "Pending", timestamp: "3 hours ago" },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleResolve = async (id: string) => {
+    await resolveComplaint(id);
+    fetchData();
+  };
+
+  const stats = dashboardData ? [
+    { label: "Faculty Size", val: dashboardData.stats.totalTeachers.toString(), trend: "+Active", icon: Users },
+    { label: "Resolution Rate", val: `${dashboardData.stats.resolutionRate}%`, trend: "High", icon: CheckCircle2 },
+    { label: "Active Audits", val: dashboardData.stats.activeComplaints.toString(), trend: "Normal", icon: ShieldCheck },
+    { label: "Total Complaints", val: dashboardData.stats.totalComplaints.toString(), trend: "All", icon: AlertTriangle },
+  ] : [];
 
   const gradeDistribution = [
     { grade: "A", count: 12, label: "Elite Teachers" },
@@ -105,7 +121,7 @@ export default function HODDashboard() {
         <Navbar 
           title="Compliance & Resolution Center" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Dr. Abdur Rahman"
+          userName={session?.user?.name || "Dr. Abdur Rahman"}
           userRole="HOD"
         />
 
@@ -195,8 +211,17 @@ export default function HODDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {complaints.map((c, i) => (
-                    <ComplaintCard key={i} {...c} />
+                  {dashboardData?.complaints?.map((c: any, i: number) => (
+                    <ComplaintCard 
+                      key={i} 
+                      id={{ rawId: c.id, onResolve: handleResolve }} 
+                      source="Teacher" 
+                      author={c.submitter?.name} 
+                      target={c.target?.name || "System"} 
+                      issue={c.description} 
+                      status={c.status} 
+                      timestamp={new Date(c.createdAt).toLocaleTimeString()} 
+                    />
                   ))}
                   {/* Empty Slot / Add Trigger */}
                   <Link href="/dashboard/hod/teachers/new" className="group border-2 border-dashed border-border rounded-3xl flex flex-col items-center justify-center p-8 gap-4 hover:border-primary/50 hover:bg-primary/5 transition-all">

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getDirectorData } from "@/app/actions/analytics";
 import { 
   ShieldCheck, TrendingUp, Users, DollarSign, 
   BarChart2, Globe, ArrowUpRight, Award,
@@ -18,19 +19,24 @@ function cn(...inputs: ClassValue[]) {
 
 export default function DirectorDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      const res = await getDirectorData();
+      if (res) setData(res);
+    }
+    loadData();
+  }, []);
 
   const executiveMetrics = [
-    { label: "Annual Revenue", val: "$420K", trend: "+15%", icon: DollarSign },
-    { label: "Student Retention", val: "98.2%", trend: "Exceptional", icon: Activity },
-    { label: "Faculty Expansion", val: "12%", trend: "On Target", icon: TrendingUp },
-    { label: "Market Authority", val: "Global", trend: "3 Regions", icon: Globe },
+    { label: "Annual Revenue", val: data?.metrics?.annualRevenue || "$0", trend: "+15%", icon: DollarSign },
+    { label: "Student Retention", val: data?.metrics?.studentRetention || "0%", trend: "Exceptional", icon: Activity },
+    { label: "Faculty Expansion", val: data?.metrics?.facultyExpansion || "0", trend: "On Target", icon: TrendingUp },
+    { label: "Active Students", val: data?.metrics?.activeStudents || "0", trend: "Global", icon: Globe },
   ];
 
-  const regionalGrowth = [
-    { region: "United Kingdom", share: 45, students: 184, growth: "+12%" },
-    { region: "United States", share: 35, students: 156, growth: "+8%" },
-    { region: "Gulf / UAE", share: 20, students: 86, growth: "+18%" },
-  ];
+  const regionalGrowth = data?.regionalGrowth || [];
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -99,7 +105,7 @@ export default function DirectorDashboard() {
                      <h3 className="text-2xl font-black text-foreground uppercase tracking-tight flex items-center gap-3">
                         <BarChart2 size={24} className="text-primary" /> Multi-Region Health
                      </h3>
-                     <button className="text-[12px] font-black text-primary uppercase tracking-widest hover:underline">Download Audit</button>
+                     <button onClick={() => window.print()} className="text-[12px] font-black text-primary uppercase tracking-widest hover:underline">Download Audit</button>
                   </div>
 
                   <div className="space-y-10">
@@ -143,7 +149,7 @@ export default function DirectorDashboard() {
                      </div>
 
                      <div className="pt-4">
-                        <button className="w-full h-14 bg-card border-2 border-primary text-primary rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-3">
+                        <button onClick={() => window.print()} className="w-full h-14 bg-card border-2 border-primary text-primary rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-3">
                            <PieChart size={18} /> Global Strategy Report
                         </button>
                      </div>
@@ -158,7 +164,7 @@ export default function DirectorDashboard() {
                      <p className="text-[12px] font-bold opacity-80 leading-relaxed">
                         Notice: The US region is showing a 4% increase in student cancellations this week. A strategic meeting with the **USA Shift Manager** and the **Global Manager** is recommended.
                      </p>
-                     <button className="h-10 px-6 bg-white text-primary rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-white/90 transition-all mt-4">
+                     <button onClick={() => alert("Sync requested with HR & Shift Manager")} className="h-10 px-6 bg-white text-primary rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-white/90 transition-all mt-4">
                         Schedule Sync
                      </button>
                   </div>

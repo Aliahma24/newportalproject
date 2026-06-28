@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getMonitoringData } from "@/app/actions/analytics";
+import { escalateIssue } from "@/app/actions/admin";
 import { 
   Globe, Users, Clock, ShieldCheck, ArrowUpRight, 
   MapPin, AlertTriangle, CheckCircle2, Search, 
@@ -28,12 +30,24 @@ export default function ShiftManagerDashboard() {
     { label: "Pending Issues", val: "03", trend: "Urgent", icon: AlertTriangle },
   ];
 
-  const ukClasses = [
-    { id: "UK-8801", student: "Zayd Ibrahim", teacher: "Ustadh Bilal", slot: "07:00 PM GMT", status: "Active", attendance: "Verified" },
-    { id: "UK-8802", student: "Sara Ahmed", teacher: "Sheikh Omar", slot: "07:30 PM GMT", status: "Active", attendance: "Pending" },
-    { id: "UK-8803", student: "Hamza Malik", teacher: "Hafiz Usman", slot: "08:00 PM GMT", status: "Upcoming", attendance: "N/A" },
-    { id: "UK-8804", student: "Aisha Khan", teacher: "Ustada Fatima", slot: "08:00 PM GMT", status: "Upcoming", attendance: "N/A" },
-  ];
+  const [ukClasses, setUkClasses] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const res = await getMonitoringData();
+      if (res?.liveClasses) {
+        setUkClasses(res.liveClasses.map((c: any) => ({
+          id: `UK-${c.id.substring(0,4)}`,
+          student: c.student,
+          teacher: c.teacher,
+          slot: `${c.startTime} GMT`,
+          status: "Active",
+          attendance: "Verified"
+        })));
+      }
+    }
+    loadData();
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -126,10 +140,19 @@ export default function ShiftManagerDashboard() {
                                     </td>
                                     <td className="p-6">
                                        <div className="flex items-center justify-center gap-2">
-                                          <button className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-sm" title="Monitor Session">
+                                          <button 
+                                             onClick={() => alert("Monitoring session connected")}
+                                             className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all shadow-sm" title="Monitor Session"
+                                          >
                                              <PlayCircle size={16} />
                                           </button>
-                                          <button className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-destructive transition-all shadow-sm" title="Escalate to Manager">
+                                          <button 
+                                             onClick={async () => {
+                                                const res = await escalateIssue(`Shift Escalation: ${cls.teacher}`, "Urgent attention required during shift.");
+                                                if (res.success) alert("Escalated to Global Manager");
+                                             }}
+                                             className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-destructive transition-all shadow-sm" title="Escalate to Manager"
+                                          >
                                              <AlertTriangle size={16} />
                                           </button>
                                        </div>
@@ -191,7 +214,13 @@ export default function ShiftManagerDashboard() {
                      <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">
                         Notice: 3 classes in the UK-South region are facing persistent internet issues. Escalate for immediate teacher backup.
                      </p>
-                     <button className="w-full h-12 bg-destructive text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/90 transition-all">
+                     <button 
+                        onClick={async () => {
+                           const res = await escalateIssue("Global Alert: UK-South Outage", "3 classes in the UK-South region are facing persistent internet issues.");
+                           if (res.success) alert("Global Alert Escalated");
+                        }}
+                        className="w-full h-12 bg-destructive text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/90 transition-all"
+                     >
                         Escalate Global Alert
                      </button>
                   </div>

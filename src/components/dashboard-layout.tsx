@@ -55,6 +55,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
     { icon: Users, label: "Users Directory", href: "/dashboard/admin/users", active: pathname === "/dashboard/admin/users" },
     { icon: GraduationCap, label: "Classes & Courses", href: "/dashboard/admin/classes", active: pathname === "/dashboard/admin/classes" },
     { icon: CalendarCheck, label: "Attendance", href: "/dashboard/admin/attendance", active: pathname === "/dashboard/admin/attendance" },
+    { icon: CreditCard, label: "Finance & Billing", href: "/dashboard/finance", active: pathname === "/dashboard/finance" },
     { icon: BarChart2, label: "Reports & Analytics", href: "/dashboard/admin/reports", active: pathname === "/dashboard/admin/reports" },
   ];
 
@@ -75,7 +76,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
   ];
 
   const teacherSettingItems = [
-    { icon: UserCog, label: "My Profile", href: "/dashboard/teacher/profile", active: pathname === "/dashboard/teacher/profile" },
+    { icon: UserCog, label: "My Profile", href: "/dashboard/profile", active: pathname === "/dashboard/profile" },
   ];
 
   const csrMenuItems = [
@@ -84,7 +85,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
   ];
 
   const csrSettingItems = [
-    { icon: UserCog, label: "My Profile", href: "/dashboard/csr/profile", active: pathname === "/dashboard/csr/profile" },
+    { icon: UserCog, label: "My Profile", href: "/dashboard/profile", active: pathname === "/dashboard/profile" },
   ];
 
   const studentMenuItems = [
@@ -102,7 +103,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
 
   const studentSettingItems = [
     { icon: AlertTriangle, label: "Submit Complaint", href: "/dashboard/student/complaint", active: pathname === "/dashboard/student/complaint" },
-    { icon: User, label: "My Profile", href: "/dashboard/student/profile", active: pathname === "/dashboard/student/profile" },
+    { icon: User, label: "My Profile", href: "/dashboard/profile", active: pathname === "/dashboard/profile" },
   ];
 
   const hrMenuItems = [
@@ -146,13 +147,14 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
   ];
 
   const monitoringSettingItems = [
-    { icon: UserCog, label: "My Profile", href: "/dashboard/monitoring/profile", active: pathname === "/dashboard/monitoring/profile" },
+    { icon: UserCog, label: "My Profile", href: "/dashboard/profile", active: pathname === "/dashboard/profile" },
   ];
 
   const directorMenuItems = [
     { icon: LayoutDashboard, label: "Executive Dashboard", href: "/dashboard/director", active: pathname === "/dashboard/director" },
     { icon: TrendingUp, label: "Strategic Analytics", href: "/dashboard/director/analytics", active: pathname === "/dashboard/director/analytics" },
     { icon: Users, label: "Institution Overview", href: "/dashboard/director/overview", active: pathname === "/dashboard/director/overview" },
+    { icon: CreditCard, label: "Finance Central", href: "/dashboard/finance", active: pathname === "/dashboard/finance" },
     { icon: BarChart2, label: "Financial Reports", href: "/dashboard/director/financial", active: pathname === "/dashboard/director/financial" },
     { icon: Globe, label: "Regional Performance", href: "/dashboard/director/regions", active: pathname === "/dashboard/director/regions" },
   ];
@@ -165,6 +167,7 @@ export function Sidebar({ className, role = "admin" }: { className?: string; rol
     { icon: LayoutDashboard, label: "Manager Dashboard", href: "/dashboard/manager", active: pathname === "/dashboard/manager" },
     { icon: Users, label: "Center Operations", href: "/dashboard/manager/operations", active: pathname === "/dashboard/manager/operations" },
     { icon: Clock, label: "Schedule Management", href: "/dashboard/manager/schedule", active: pathname === "/dashboard/manager/schedule" },
+    { icon: CreditCard, label: "Center Finances", href: "/dashboard/finance", active: pathname === "/dashboard/finance" },
     { icon: AlertTriangle, label: "Issues & Reports", href: "/dashboard/manager/issues", active: pathname === "/dashboard/manager/issues" },
     { icon: BarChart2, label: "Performance Metrics", href: "/dashboard/manager/metrics", active: pathname === "/dashboard/manager/metrics" },
   ];

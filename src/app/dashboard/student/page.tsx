@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getStudentDashboardData } from "@/app/actions/dashboard";
+import { markAttendance } from "@/app/actions/attendance";
 import { 
   Clock, CheckCircle2, Video, BookOpen, Calendar, 
   AlertCircle, ShieldCheck, ArrowRight, Star,
@@ -16,14 +19,32 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function StudentDashboard() {
+  const { data: session } = useSession();
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      getStudentDashboardData(session.user.id).then(data => {
+        setDashboardData(data);
+        if (data.todaysClass && data.attendances) {
+          const classAttendance = data.attendances.find((a: any) => a.classId === data.todaysClass.id);
+          if (classAttendance) {
+            setAttendance({
+              marked: true,
+              time: new Date(classAttendance.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            });
+          }
+        }
+      });
+    }
+  }, [session]);
   
-  // Mock Class Data (e.g., Class at 07:00 PM - Assuming current time testing)
-  const classStartTime = new Date();
-  classStartTime.setHours(19, 0, 0); // 7:00 PM
-  const classEndTime = new Date();
-  classEndTime.setHours(20, 0, 0); // 8:00 PM
+  const classStartTime = dashboardData?.todaysClass ? new Date(dashboardData.todaysClass.scheduledStart) : new Date(new Date().setHours(19, 0, 0));
+  const classEndTime = dashboardData?.todaysClass ? new Date(dashboardData.todaysClass.scheduledEnd) : new Date(new Date().setHours(20, 0, 0));
 
   const [attendance, setAttendance] = useState<{ marked: boolean; time: string | null }>({
     marked: false,
@@ -62,7 +83,7 @@ export default function StudentDashboard() {
         <Navbar 
           title="Learning Portal" 
           onMenuClick={() => setSidebarOpen(true)}
-          userName="Zayd Ibrahim"
+          userName={session?.user?.name || "Loading..."}
           userRole="Student"
         />
 
@@ -76,8 +97,8 @@ export default function StudentDashboard() {
                   <User size={32} />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, Zayd</h1>
-                  <p className="text-[14px] font-bold text-muted-foreground mt-1">Ready for your Tajweed session today?</p>
+                  <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">Salaam, {session?.user?.name?.split(' ')[0] || 'Student'}</h1>
+                  <p className="text-[14px] font-bold text-muted-foreground mt-1">Ready for your session today?</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 bg-muted/50 px-6 py-4 rounded-3xl border border-border">
@@ -106,12 +127,19 @@ export default function StudentDashboard() {
                        )}>
                          {classStatus === "Joinable" ? "● Live Now" : classStatus === "Locked" ? "Scheduled" : "Ended"}
                        </span>
-                       <span className="text-[11px] font-bold text-muted-foreground">Tajweed Basics • Ustadh Bilal</span>
+                       <span className="text-[11px] font-bold text-muted-foreground">
+                         {dashboardData?.todaysClass ? `${dashboardData.todaysClass.title} • Teacher` : 'No Class Today'}
+                       </span>
                     </div>
 
                     <div className="space-y-2">
-                       <h2 className="text-5xl font-black text-foreground uppercase tracking-tighter leading-tight">Mastering Madd <br/> & Articulation</h2>
-                       <p className="text-[16px] font-bold text-muted-foreground max-w-md">Your 60-minute session will focus on the rules of Madd-e-Muttasil.</p>
+                       <h2 className="text-5xl font-black text-foreground uppercase tracking-tighter leading-tight">
+                         {dashboardData?.todaysClass ? dashboardData.todaysClass.title : 'No Class'} <br/> 
+                         {dashboardData?.todaysClass ? 'Scheduled' : 'Today'}
+                       </h2>
+                       <p className="text-[16px] font-bold text-muted-foreground max-w-md">
+                         {dashboardData?.todaysClass?.description || 'You do not have any classes scheduled for today.'}
+                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-6 items-center">
@@ -138,23 +166,27 @@ export default function StudentDashboard() {
                     <div className="pt-4">
                       {!attendance.marked ? (
                         <button 
-                          onClick={() => {
-                            const now = new Date();
-                            setAttendance({
-                              marked: true,
-                              time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                            });
-                            // Mock: window.open('zoom-link', '_blank');
+                          onClick={async () => {
+                            if (!session?.user?.id || !dashboardData?.todaysClass?.id) return;
+                            setIsLoading(true);
+                            const res = await markAttendance(session.user.id, dashboardData.todaysClass.id, "STUDENT");
+                            setIsLoading(false);
+                            if (res.success && res.attendance) {
+                              setAttendance({
+                                marked: true,
+                                time: new Date(res.attendance.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                              });
+                            }
                           }}
-                          disabled={classStatus !== "Joinable"}
+                          disabled={classStatus !== "Joinable" || isLoading}
                           className={cn(
                             "h-16 px-12 rounded-3xl text-[15px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3 group/btn",
-                            classStatus === "Joinable" 
+                            classStatus === "Joinable" && !isLoading
                               ? "bg-primary text-white shadow-primary/20 hover:scale-105 active:scale-95" 
                               : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
                           )}
                         >
-                          <PlayCircle size={24} /> Enter Classroom & Log Presence
+                          <PlayCircle size={24} /> {isLoading ? "Logging Presence..." : "Enter Classroom & Log Presence"}
                         </button>
                       ) : (
                         <div className="flex flex-col md:flex-row items-center gap-4">

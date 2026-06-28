@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getSchedulerData } from "@/app/actions/analytics";
+import { cancelClassSession, logAlert, escalateIssue } from "@/app/actions/admin";
 import { 
   Users, Search, Calendar, Clock, ListTodo, Plus, UserCheck, 
   Video, Phone, MessageSquare, AlertCircle, CheckCircle2, 
@@ -119,28 +121,15 @@ export default function SchedulerDashboard() {
   // Monitoring States
   const [auditTarget, setAuditTarget] = useState<{ id: string, name: string } | null>(null);
 
-  const [classes, setClasses] = useState<ClassSession[]>([
-    {
-      id: "1",
-      time: "08:00 AM",
-      country: "Pakistan",
-      student: { name: "Zayd Ibrahim", contact: "+92 300 1234567", guardian: "Ibrahim Ali", localTime: "08:00 AM" },
-      teacher: { name: "Hafiz Usman", contact: "+92 321 7654321", status: "Available" },
-      subject: "Tajweed Basics",
-      status: "Scheduled",
-      attempts: 0
-    },
-    {
-      id: "2",
-      time: "08:00 AM",
-      country: "Pakistan",
-      student: { name: "Sara Ahmed", contact: "+92 301 9876543", guardian: "Ahmed Khan", localTime: "08:00 AM" },
-      teacher: { name: "Ustadh Bilal", contact: "+92 333 1112223", status: "Available" },
-      subject: "Hifz",
-      status: "Scheduled",
-      attempts: 1
+  const [classes, setClasses] = useState<ClassSession[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const res = await getSchedulerData();
+      if (res?.classes) setClasses(res.classes);
     }
-  ]);
+    loadData();
+  }, []);
 
   // Notification State
   const [notification, setNotification] = useState<{ message: string; type: "success" | "info" | "warning" | null }>(
@@ -157,17 +146,28 @@ export default function SchedulerDashboard() {
     showNotify(`Joining live session with ${teacher}... (Connecting to Zoom)`, "info");
   };
 
-  const handleTeacherOut = (id: string) => {
-    setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "Cancelled", teacher: { ...c.teacher, status: "Unavailable" } } : c));
-    showNotify("Teacher marked unavailable. Student/Guardian notified.", "warning");
+  const handleTeacherOut = async (id: string) => {
+    const res = await cancelClassSession(id);
+    if(res.success) {
+      setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "Cancelled", teacher: { ...c.teacher, status: "Unavailable" } } : c));
+      showNotify("Teacher marked unavailable. Class cancelled and saved to DB.", "warning");
+    } else {
+      showNotify("Failed to cancel class", "warning");
+    }
   };
 
-  const handleStudentOut = (id: string) => {
-    setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "Cancelled" } : c));
-    showNotify("Student marked unavailable. Teacher notified.", "warning");
+  const handleStudentOut = async (id: string) => {
+    const res = await cancelClassSession(id);
+    if(res.success) {
+      setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "Cancelled" } : c));
+      showNotify("Student marked unavailable. Class cancelled and saved to DB.", "warning");
+    } else {
+      showNotify("Failed to cancel class", "warning");
+    }
   };
 
-  const handleCallAlert = (id: string) => {
+  const handleCallAlert = async (id: string) => {
+    await logAlert("CALL_ALERT", `Called student for class ${id}`);
     let statusUpdate = "";
     setClasses(prev => prev.map(c => {
       if (c.id === id) {
@@ -176,7 +176,7 @@ export default function SchedulerDashboard() {
           statusUpdate = "3 attempts failed. Student marked ABSENT.";
           return { ...c, status: "Absent", attempts: newAttempts };
         }
-        statusUpdate = `Call Alert #${newAttempts} initiated...`;
+        statusUpdate = `Call Alert #${newAttempts} initiated (Logged to System).`;
         return { ...c, attempts: newAttempts };
       }
       return c;
@@ -184,8 +184,9 @@ export default function SchedulerDashboard() {
     showNotify(statusUpdate || "Call Alert triggered.", "info");
   };
 
-  const handleReminder = (id: string, target: "Student" | "Teacher") => {
-    showNotify(`${target} WhatsApp reminder with local time variables sent. Status pending response.`, "success");
+  const handleReminder = async (id: string, target: "Student" | "Teacher") => {
+    await logAlert("WHATSAPP_REMINDER", `Sent reminder to ${target} for class ${id}`);
+    showNotify(`${target} WhatsApp reminder sent & logged to system. Status pending response.`, "success");
   };
 
   return (
@@ -199,7 +200,14 @@ export default function SchedulerDashboard() {
             isOpen={!!auditTarget} 
             onClose={() => setAuditTarget(null)} 
             teacherName={auditTarget.name} 
-            onConfirm={(msg) => showNotify(msg, "success")} 
+            onConfirm={async (msg) => {
+              const res = await escalateIssue(`Audit: ${auditTarget.name}`, msg);
+              if (res.success) {
+                showNotify("Audit submitted and saved as Complaint to Database", "success");
+              } else {
+                showNotify("Failed to submit audit", "warning");
+              }
+            }} 
           />
         )}
       </AnimatePresence>
@@ -313,13 +321,19 @@ export default function SchedulerDashboard() {
 
               <div className="relative z-10 flex items-center gap-4">
                 <button 
-                  onClick={() => showNotify("Global Call Alerts initiated for this slot.", "info")}
+                  onClick={async () => {
+                    await logAlert("MASS_CALL", `Global call alerts for ${selectedCountry} / ${selectedSlot}`);
+                    showNotify("Global Call Alerts initiated and logged.", "info");
+                  }}
                   className="h-14 px-8 bg-blue-600 text-white rounded-[20px] text-[13px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95"
                 >
                   <PhoneCall size={20} /> Trigger Call Alerts
                 </button>
                 <button 
-                  onClick={() => showNotify("Global SMS Alerts sent to all pending students.", "info")}
+                  onClick={async () => {
+                    await logAlert("MASS_SMS", `Global SMS alerts for ${selectedCountry} / ${selectedSlot}`);
+                    showNotify("Global SMS Alerts sent and logged.", "info");
+                  }}
                   className="h-14 px-8 bg-amber-600 text-white rounded-[20px] text-[13px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-amber-600/20 hover:bg-amber-700 transition-all active:scale-95"
                 >
                   <MessageSquare size={20} /> Trigger SMS Alerts

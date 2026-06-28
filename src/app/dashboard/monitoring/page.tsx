@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getMonitoringData } from "@/app/actions/analytics";
 import {
   ShieldCheck, Search, Filter, Video, Clock, User,
   CheckCircle2, AlertCircle, Play, MoreVertical, LayoutGrid,
@@ -10,25 +11,127 @@ import { Sidebar, Navbar } from "@/components/dashboard-layout";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
+import { escalateIssue } from "@/app/actions/admin";
+import { motion, AnimatePresence } from "framer-motion";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Teacher Audit Modal Component
+function AuditModal({ isOpen, onClose, teacherName, onConfirm }: { isOpen: boolean, onClose: () => void, teacherName: string, onConfirm: (msg: string) => void }) {
+  const [reportType, setReportType] = useState("Technical Issue");
+  const [description, setDescription] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+      <motion.div 
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-background/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-xl bg-card border border-border rounded-[40px] shadow-2xl overflow-hidden"
+      >
+        <div className="p-8 bg-primary/10 border-b border-border flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
+            <AlertCircle size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Teacher Performance Audit</h3>
+            <p className="text-[13px] font-bold text-muted-foreground">Monitoring session for: <span className="text-primary">{teacherName}</span></p>
+          </div>
+        </div>
+
+        <div className="p-10 space-y-8">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Observation Type</label>
+            <div className="relative">
+              <select 
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="w-full h-14 bg-muted/50 border border-border rounded-2xl px-5 text-[15px] font-bold text-foreground focus:border-primary outline-none appearance-none cursor-pointer"
+              >
+                <option>Technical Issue (Zoom/Audio)</option>
+                <option>Behavioral Issue (Unprofessional)</option>
+                <option>Pedagogical Issue (Methodology)</option>
+                <option>Unexplained Absence</option>
+                <option>General Observation</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Detailed Description</label>
+            <textarea 
+              placeholder="Provide specific details about what you observed..."
+              className="w-full h-40 bg-muted/50 border border-border rounded-3xl p-5 text-[15px] font-bold focus:border-primary outline-none transition-all resize-none"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-4 pt-4">
+            <button 
+              onClick={onClose}
+              className="flex-1 h-14 bg-muted border border-border rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-muted/80 transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => { onConfirm(`Audit filed for ${teacherName}: [${reportType}] - ${description}`); onClose(); }}
+              className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[14px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all"
+            >
+              Submit Audit Report
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function MonitoringDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [liveClasses, setLiveClasses] = useState<any[]>([]);
+  const [auditTarget, setAuditTarget] = useState<{ id: string, name: string } | null>(null);
 
-  const liveClasses = [
-    { id: "CLS-101", teacher: "Ustadh Bilal", student: "Zaid Ibrahim", startTime: "14:00", duration: "12m", status: "Watching", quality: "Good" },
-    { id: "CLS-102", teacher: "Sheikh Omar", student: "Sara Ahmed", startTime: "14:00", duration: "12m", status: "Active", quality: "N/A" },
-    { id: "CLS-103", teacher: "Ustada Fatima", student: "Amira El-Sayed", startTime: "14:15", duration: "0m", status: "Starting", quality: "N/A" },
-    { id: "CLS-104", teacher: "Ustadh Tariq", student: "Yahya Hassan", startTime: "13:30", duration: "42m", status: "Active", quality: "Reported" },
-  ];
+  useEffect(() => {
+    async function loadData() {
+      const res = await getMonitoringData();
+      if (res?.liveClasses) setLiveClasses(res.liveClasses);
+    }
+    loadData();
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
       <Sidebar role="monitoring" className="hidden md:flex w-64 shrink-0" />
+
+      {/* Audit Modal Overlay */}
+      <AnimatePresence>
+        {auditTarget && (
+          <AuditModal 
+            isOpen={!!auditTarget} 
+            onClose={() => setAuditTarget(null)} 
+            teacherName={auditTarget.name} 
+            onConfirm={async (msg) => {
+              const res = await escalateIssue(`QA Audit: ${auditTarget.name}`, msg);
+              if (res.success) {
+                alert("Audit submitted and saved as Complaint to Database");
+              } else {
+                alert("Failed to submit audit");
+              }
+            }} 
+          />
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Navbar title="Live Monitor" onMenuClick={() => setSidebarOpen(true)} userName="Monitoring Agent 1" userRole="Monitoring" />
 
@@ -41,8 +144,8 @@ export default function MonitoringDashboard() {
                 <Video size={24} className="animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">12 Active Classes</h2>
-                <p className="text-[13px] text-muted-foreground font-medium">Monitoring team is watching 3 live sessions</p>
+                <h2 className="text-xl font-bold text-foreground">{liveClasses.length} Active Classes</h2>
+                <p className="text-[13px] text-muted-foreground font-medium">Monitoring team is watching {liveClasses.length} live sessions</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -123,9 +226,9 @@ export default function MonitoringDashboard() {
                       )} />
                       <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Quality: {cls.quality}</span>
                     </div>
-                    <Link href="/dashboard/monitoring/report" className="h-8 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 hover:bg-secondary hover:text-white transition-all">
+                    <button onClick={() => setAuditTarget({ id: cls.id, name: cls.teacher })} className="h-8 px-3 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 hover:bg-secondary hover:text-white transition-all cursor-pointer">
                       <MessageSquare size={14} /> Report
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>

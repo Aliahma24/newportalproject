@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  HOD
+  TEACHER
+  STUDENT
+  SCHEDULER
+  HR
+  CSR
+  MONITOR
+}
+
+enum ClassStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  LEAVE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // Store hashed passwords
+  name      String
+  role      Role     @default(STUDENT)
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  classesAsTeacher ClassSession[] @relation("TeacherClasses")
+  classesAsStudent ClassSession[] @relation("StudentClasses")
+  attendances    Attendance[]
+  complaintsSubmitted Complaint[] @relation("ComplaintsSubmitted")
+  complaintsReceived Complaint[] @relation("ComplaintsReceived")
+  leaveRequests  LeaveRequest[]
+  invoices       Invoice[]
+}
+
+model StudentProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  guardianName   String?
+  guardianPhone  String?
+  age            Int?
+  level          String?  // Beginner, Intermediate, Advanced
+  progress       Int      @default(0) // Percentage
+  enrolledAt     DateTime @default(now())
+}
+
+model TeacherProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  qualification  String?
+  shift          String?  // Morning, Evening, Weekend
+  rating         Float    @default(0.0)
+  joinedAt       DateTime @default(now())
+}
+
+model ClassSession {
+  id             String      @id @default(uuid())
+  title          String
+  description    String?
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  status         ClassStatus @default(SCHEDULED)
+  zoomLink       String?
+  createdAt      DateTime    @default(now())
+
+  // Relations
+  teacherId      String
+  teacher        User        @relation("TeacherClasses", fields: [teacherId], references: [id])
+  studentId      String
+  student        User        @relation("StudentClasses", fields: [studentId], references: [id])
+  attendances    Attendance[]
+}
+
+model Attendance {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  classId        String
+  classSession   ClassSession     @relation(fields: [classId], references: [id])
+  status         AttendanceStatus
+  markedAt       DateTime         @default(now())
+  notes          String?
+}
+
+model DemoRequest {
+  id             String   @id @default(uuid())
+  guardianName   String
+  studentName    String
+  studentAge     Int
+  studentLevel   String
+  phone          String
+  country        String   @default("Pakistan")
+  preferredTime  String
+  preferredDays  String
+  status         String   @default("PENDING") // PENDING, SCHEDULED, COMPLETED, CANCELLED
+  createdAt      DateTime @default(now())
+}
+
+model Complaint {
+  id             String   @id @default(uuid())
+  title          String
+  description    String
+  issueType      String
+  severity       String   @default("MEDIUM")
+  status         String   @default("PENDING") // PENDING, RESOLVED, ESCALATED
+  createdAt      DateTime @default(now())
+
+  submitterId    String
+  submitter      User     @relation("ComplaintsSubmitted", fields: [submitterId], references: [id])
+  targetId       String?
+  target         User?    @relation("ComplaintsReceived", fields: [targetId], references: [id])
+}
+
+model LeaveRequest {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  leaveType      String
+  startDate      DateTime
+  endDate        DateTime
+  reason         String
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
+}
+
+model Invoice {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        User     @relation(fields: [studentId], references: [id])
+  amount         Float
+  currency       String   @default("USD")
+  status         String   @default("PENDING") // PENDING, PAID, OVERDUE
+  dueDate        DateTime
+  paidAt         DateTime?
+  createdAt      DateTime @default(now())
+}

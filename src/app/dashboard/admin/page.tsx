@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { getAdminDashboardData, getUsersByRole, createClassSession } from "@/app/actions/admin";
 import { 
   Users, 
   GraduationCap, 
@@ -30,93 +32,89 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    teacherId: "",
+    studentId: "",
+    scheduledStart: "",
+    duration: "60"
+  });
 
-  const stats = [
+  const fetchData = async () => {
+    const data = await getAdminDashboardData();
+    setDashboardData(data);
+  };
+
+  useEffect(() => {
+    fetchData();
+    // Load users for the form
+    getUsersByRole("TEACHER").then(setTeachers);
+    getUsersByRole("STUDENT").then(setStudents);
+  }, []);
+
+  const handleCreateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const start = new Date(formData.scheduledStart);
+    const end = new Date(start.getTime() + parseInt(formData.duration) * 60000);
+    
+    await createClassSession({
+      title: formData.title,
+      description: formData.description,
+      teacherId: formData.teacherId,
+      studentId: formData.studentId,
+      scheduledStart: start,
+      scheduledEnd: end
+    });
+    
+    setIsModalOpen(false);
+    fetchData(); // Refresh data
+  };
+
+  const stats = dashboardData ? [
     { 
       label: "Total Students", 
-      value: "1,248", 
+      value: dashboardData.stats.totalStudents, 
       icon: Users, 
-      trend: "+12.5%", 
+      trend: "+Active", 
       trendType: "positive",
-      comparison: "vs last month"
+      comparison: "system-wide"
     },
     { 
       label: "Total Teachers", 
-      value: "42", 
+      value: dashboardData.stats.totalTeachers, 
       icon: GraduationCap, 
-      trend: "+2.4%", 
-      trendType: "positive",
-      comparison: "vs last month"
+      trend: "Stable", 
+      trendType: "neutral",
+      comparison: "system-wide"
     },
     { 
       label: "Active Classes", 
-      value: "18", 
+      value: dashboardData.stats.activeClasses, 
       icon: BookOpen, 
-      trend: "0.0%", 
-      trendType: "neutral",
-      comparison: "vs last month"
+      trend: "Live", 
+      trendType: "positive",
+      comparison: "currently scheduled"
     },
     { 
       label: "Attendance %", 
-      value: "94%", 
+      value: `${dashboardData.stats.attendancePercentage}%`, 
       icon: CheckCircle2, 
-      trend: "-1.2%", 
-      trendType: "negative",
-      comparison: "vs last week"
+      trend: "Avg", 
+      trendType: "neutral",
+      comparison: "overall"
     },
-  ];
+  ] : [];
 
-  const upcomingClasses = [
-    {
-      time: "10:00 AM",
-      duration: "45 mins",
-      name: "Hifz Revision - Group B",
-      teacher: "Ustadha Aisha",
-      status: "ongoing",
-      active: true
-    },
-    {
-      time: "11:30 AM",
-      duration: "60 mins",
-      name: "Tajweed Fundamentals",
-      teacher: "Hafiz Rahman",
-      status: "next",
-      active: false
-    },
-    {
-      time: "02:00 PM",
-      duration: "30 mins",
-      name: "Islamic Studies 101",
-      teacher: "Sheikh Umar",
-      status: "upcoming",
-      active: false
-    },
-  ];
-
-  const activities = [
-    { 
-      user: "Hafiz Rahman", 
-      action: "created a new class", 
-      target: "Hifz Room A", 
-      time: "12 mins ago",
-      avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F35-50%2FMiddle%20Eastern%2F1"
-    },
-    { 
-      user: "Ustadha Fatima", 
-      action: "marked attendance for", 
-      target: "Tajweed Class", 
-      time: "1 hour ago",
-      avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Ffemale%2F25-35%2FSouth%20Asian%2F2"
-    },
-    { 
-      user: "Admin", 
-      action: "added a new student", 
-      target: "Zainab Ali", 
-      time: "3 hours ago",
-      avatar: "https://storage.googleapis.com/banani-avatars/avatar%2Fmale%2F25-35%2FAfrican%2F3"
-    },
-  ];
+  // Data is fetched dynamically
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -148,7 +146,7 @@ export default function AdminDashboard() {
           {/* Greeting Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-               <h2 className="text-2xl font-bold text-foreground">Welcome back, Admin! 👋</h2>
+               <h2 className="text-2xl font-bold text-foreground">Welcome back, {session?.user?.name || "Admin"}! 👋</h2>
                <p className="text-sm text-muted-foreground font-medium">Here's what's happening today in Taleem ul Quran.</p>
             </div>
             <div className="flex items-center gap-3">
@@ -315,7 +313,7 @@ export default function AdminDashboard() {
                   </div>
                   Add New Student
                 </button>
-                <button className="w-full flex items-center gap-3.5 p-3 rounded-lg bg-card border border-border text-foreground font-bold text-[13px] hover:bg-muted transition-all">
+                <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center gap-3.5 p-3 rounded-lg bg-card border border-border text-foreground font-bold text-[13px] hover:bg-muted transition-all">
                   <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-primary">
                     <CalendarPlus size={18} />
                   </div>
@@ -336,32 +334,32 @@ export default function AdminDashboard() {
                  <h3 className="font-bold text-foreground">Upcoming Classes</h3>
                  <button className="text-[12px] font-bold text-primary hover:underline transition-all">View Schedule</button>
               </div>
-              <div className="space-y-3 flex-1">
-                 {upcomingClasses.map((item, i) => (
+               <div className="space-y-3 flex-1">
+                 {dashboardData?.upcomingClasses?.length ? dashboardData.upcomingClasses.map((item: any, i: number) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border group hover:border-primary/30 transition-all">
                        <div className="text-right min-w-[60px]">
-                          <div className="text-[13px] font-bold text-foreground leading-none">{item.time}</div>
-                          <div className="text-[10px] font-semibold text-muted-foreground mt-1">{item.duration}</div>
+                          <div className="text-[13px] font-bold text-foreground leading-none">{new Date(item.scheduledStart).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                          <div className="text-[10px] font-semibold text-muted-foreground mt-1">Class</div>
                        </div>
                        <div className={cn(
                           "w-0.5 h-8 rounded-full",
-                          item.active ? "bg-primary" : "bg-border"
+                          item.status === 'LIVE' ? "bg-primary" : "bg-border"
                        )} />
                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-bold text-foreground truncate">{item.name}</div>
+                          <div className="text-[13px] font-bold text-foreground truncate">{item.title}</div>
                           <div className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground mt-1">
                              <User size={12} />
-                             {item.teacher}
+                             {item.teacher?.name} • {item.student?.name}
                           </div>
                        </div>
-                       {item.status === "ongoing" && (
-                          <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">Ongoing</div>
+                       {item.status === "LIVE" && (
+                          <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">Live</div>
                        )}
-                       {item.status === "next" && (
+                       {item.status === "SCHEDULED" && (
                           <div className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wide">Next</div>
                        )}
                     </div>
-                 ))}
+                 )) : <p className="text-sm text-muted-foreground">No classes scheduled.</p>}
               </div>
             </div>
 
@@ -372,29 +370,124 @@ export default function AdminDashboard() {
                  <button className="text-[12px] font-bold text-primary hover:underline transition-all">View All</button>
               </div>
               <div className="space-y-6 flex-1">
-                {activities.map((activity, i) => (
+                {dashboardData?.recentActivity?.length ? dashboardData.recentActivity.map((activity: any, i: number) => (
                   <div key={i} className="flex items-start justify-between gap-3 group">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="h-8 w-8 rounded-full overflow-hidden border border-border bg-muted shrink-0 mt-0.5">
-                        <img src={activity.avatar} alt={activity.user} className="w-full h-full object-cover" />
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold">
+                        {activity.user?.name?.charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm text-foreground leading-snug line-clamp-2">
-                          <span className="font-bold">{activity.user}</span> {activity.action} <span className="font-bold text-primary">{activity.target}</span>
+                          <span className="font-bold">{activity.user?.name}</span> marked <span className="font-bold text-primary">{activity.status}</span>
                         </p>
-                        <p className="text-[11px] font-semibold text-muted-foreground mt-1.5">{activity.time}</p>
+                        <p className="text-[11px] font-semibold text-muted-foreground mt-1.5">{new Date(activity.markedAt).toLocaleString()}</p>
                       </div>
                     </div>
-                    <button className="text-[12px] font-bold text-primary hover:underline shrink-0">
-                      View
-                    </button>
                   </div>
-                ))}
+                )) : <p className="text-sm text-muted-foreground">No recent activity.</p>}
               </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* Create Class Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div className="relative bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl p-6 md:p-8 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-foreground">Schedule New Class</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateClass} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase">Class Title</label>
+                <input 
+                  required
+                  type="text" 
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  placeholder="e.g. Tajweed Basics"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-muted-foreground uppercase">Description</label>
+                <input 
+                  type="text" 
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  placeholder="Focus on Qalqalah rules"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Assign Teacher</label>
+                  <select 
+                    required
+                    value={formData.teacherId}
+                    onChange={e => setFormData({...formData, teacherId: e.target.value})}
+                    className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  >
+                    <option value="">Select Teacher</option>
+                    {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Assign Student</label>
+                  <select 
+                    required
+                    value={formData.studentId}
+                    onChange={e => setFormData({...formData, studentId: e.target.value})}
+                    className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  >
+                    <option value="">Select Student</option>
+                    {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Date & Time</label>
+                  <input 
+                    required
+                    type="datetime-local" 
+                    value={formData.scheduledStart}
+                    onChange={e => setFormData({...formData, scheduledStart: e.target.value})}
+                    className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Duration (mins)</label>
+                  <select 
+                    value={formData.duration}
+                    onChange={e => setFormData({...formData, duration: e.target.value})}
+                    className="w-full mt-1 p-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                  >
+                    <option value="30">30 Mins</option>
+                    <option value="45">45 Mins</option>
+                    <option value="60">60 Mins</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 p-3 rounded-lg border border-border font-bold text-sm hover:bg-muted transition-all">Cancel</button>
+                <button type="submit" className="flex-1 p-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all">Create Schedule</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { submitDemoRequest } from "@/app/actions/csr";
 import {
   ClipboardList, User, Phone, Calendar as CalendarIcon, Clock, BookOpen,
   ChevronRight, Send, CheckCircle2, UserPlus, Info, Plus, Trash2, Globe,
@@ -10,6 +11,7 @@ import { Sidebar, Navbar } from "@/components/dashboard-layout";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, eachDayOfInterval } from "date-fns";
 
 function cn(...inputs: ClassValue[]) {
@@ -325,9 +327,22 @@ export default function DemoRequestForm() {
     setStudents(newStudents);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    const result = await submitDemoRequest({
+      ...formData,
+      students,
+      isSelfStudent
+    });
+    setIsSubmitting(false);
+    if (result?.success) {
+      setSubmitted(true);
+    } else {
+      alert("Failed to submit request.");
+    }
   };
 
   const format12Hour = (time24: string) => {
@@ -376,9 +391,9 @@ export default function DemoRequestForm() {
                   >
                     Add Another Request
                   </button>
-                  <button className="h-11 px-8 bg-primary text-white rounded-xl text-[14px] font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                  <Link href="/dashboard/csr" className="h-11 px-8 bg-primary text-white flex items-center justify-center rounded-xl text-[14px] font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
                     View Demo Queue
-                  </button>
+                  </Link>
                 </div>
               </motion.div>
             ) : (
@@ -684,10 +699,11 @@ export default function DemoRequestForm() {
                   <div className="pt-10">
                     <button 
                       type="submit"
-                      className="w-full h-18 bg-primary text-white rounded-[24px] text-[18px] font-black uppercase tracking-widest flex items-center justify-center gap-4 shadow-2xl shadow-primary/30 hover:bg-primary/90 hover:-translate-y-1 transition-all active:scale-[0.98] group"
+                      disabled={isSubmitting}
+                      className="w-full h-18 bg-primary text-white rounded-[24px] text-[18px] font-black uppercase tracking-widest flex items-center justify-center gap-4 shadow-2xl shadow-primary/30 hover:bg-primary/90 hover:-translate-y-1 transition-all active:scale-[0.98] group disabled:opacity-50"
                     >
                       <Send size={24} className="group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-300" /> 
-                      Finalize Request
+                      {isSubmitting ? "Submitting..." : "Finalize Request"}
                     </button>
                     <div className="mt-6 flex items-center justify-center gap-2 text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wide">
                       <Info size={14} className="text-primary" /> Lead will be locked and sent to scheduling
