@@ -102,7 +102,7 @@ export default function ManagerDashboard() {
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                           {shiftManagers.map((sm, i) => (
+                           {shiftManagers.map((sm: any, i: number) => (
                               <tr key={i} className="hover:bg-muted/5 transition-colors">
                                  <td className="p-6">
                                     <div className="text-[14px] font-black text-foreground">{sm.name}</div>
@@ -139,7 +139,7 @@ export default function ManagerDashboard() {
                      <h3 className="text-[15px] font-black text-foreground uppercase tracking-tight">Regional Distribution</h3>
                      
                      <div className="space-y-8">
-                        {regionalPerformance.map((rp, i) => (
+                        {regionalPerformance.map((rp: any, i: number) => (
                            <div key={i} className="space-y-3">
                               <div className="flex justify-between items-end">
                                  <div>

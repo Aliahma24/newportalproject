@@ -52,6 +52,7 @@ export default function TeacherDashboard() {
     marked: false,
     time: null
   });
+  const [classStatus, setClassStatus] = useState("Not Started");
 
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Command Center");

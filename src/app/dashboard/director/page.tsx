@@ -109,7 +109,7 @@ export default function DirectorDashboard() {
                   </div>
 
                   <div className="space-y-10">
-                     {regionalGrowth.map((rg, i) => (
+                     {regionalGrowth.map((rg: any, i: number) => (
                         <div key={i} className="space-y-4">
                            <div className="flex justify-between items-end">
                               <div>

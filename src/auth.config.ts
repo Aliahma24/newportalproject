@@ -13,21 +13,21 @@ export const authConfig = {
         return false; // Redirect unauthenticated users to login page
       } else if (isLoggedIn) {
         // If logged in and on the login page (or public page), redirect to their respective dashboard
-        const role = auth.user.role?.toLowerCase() || 'student';
+        const role = (auth?.user as any)?.role?.toLowerCase() || 'student';
         return Response.redirect(new URL(`/dashboard/${role}`, nextUrl));
       }
       return true;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
+        token.role = (user as any).role;
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.role = token.role as string;
+        (session.user as any).role = token.role as string;
         session.user.id = token.id as string;
       }
       return session;

@@ -31,7 +31,7 @@ export default function StudentDashboard() {
       getStudentDashboardData(session.user.id).then(data => {
         setDashboardData(data);
         if (data.todaysClass && data.attendances) {
-          const classAttendance = data.attendances.find((a: any) => a.classId === data.todaysClass.id);
+          const classAttendance = data.attendances.find((a: any) => a.classId === data.todaysClass?.id);
           if (classAttendance) {
             setAttendance({
               marked: true,

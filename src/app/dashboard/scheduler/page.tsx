@@ -28,9 +28,9 @@ interface ClassSession {
   time: string;
   country: string;
   student: { name: string; contact: string; guardian: string; localTime: string };
-  teacher: { name: string; contact: string; status: "Available" | "Unavailable" };
+  teacher: { name: string; contact: string; status: string };
   subject: string;
-  status: "Scheduled" | "Confirmed" | "Absent" | "Cancelled";
+  status: string;
   attempts: number;
 }
 
